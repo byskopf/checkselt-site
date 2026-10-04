@@ -65,6 +65,9 @@
         <button class="btn primario" id="instalar" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 18v2h14v-2"/></svg>Instalar o CHECK-SELT
         </button>
+        <a class="btn primario" id="abrirChrome" href="#" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="M12 8.5h8.3M9 13.8 4.9 6.6M15 13.8l-4.2 7.2"/></svg>Abrir no Chrome
+        </a>
         <a class="btn secundario" id="semInstalar" href="/app-teste/">Usar sem instalar</a>
       </div>
     </section>
@@ -90,6 +93,11 @@
       var iphone = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var dentroDeApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)/i.test(ua);
       var safari = iphone && /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS|GSA\//i.test(ua);
+      var android = !iphone && /Android/i.test(ua);
+      /* Abre esta mesma página no Chrome do Android (sai da aba dentro de outro app). Sem o Chrome, fica aqui mesmo. */
+      function linkChrome() {
+        return 'intent://' + location.host + location.pathname + location.search + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(location.href) + ';end';
+      }
 
       function mostrarPassos(itens) {
         passos.innerHTML = itens.map(function (t) { return '<li>' + t + '</li>'; }).join('');
@@ -116,6 +124,18 @@
         if (pedido) {
           pedido.prompt();
           pedido.userChoice.then(function (r) { if (r && r.outcome === 'accepted') pronto(); pedido = null; });
+          return;
+        }
+        /* Android sem o pedido de instalação: quase sempre é uma aba dentro de outro app (o ícone antigo do
+           CHECK-SELT, o WhatsApp…), onde instalar não existe. O caminho é levar a página para o Chrome. */
+        if (android) {
+          var ch = document.getElementById('abrirChrome');
+          ch.href = linkChrome();
+          ch.hidden = false;
+          document.getElementById('instalar').hidden = true;
+          mostrarPassos(['Toque em <b>Abrir no Chrome</b>, logo abaixo.',
+            'No Chrome, toque de novo em <b>Instalar o CHECK-SELT</b>.',
+            'Se o Chrome não abrir: toque nos <b>três pontinhos</b> no canto da tela e escolha <b>Abrir no Chrome</b>.']);
           return;
         }
         if (dentroDeApp) {
