@@ -15,6 +15,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync, execFileSync } from 'node:child_process';
+import dns from 'node:dns';
 import { raiz, versaoAtual, gerar } from './gerar.mjs';
 
 const args = process.argv.slice(2);
@@ -24,6 +25,7 @@ const iVersao = args.indexOf('--versao');
 const versaoPedida = iVersao >= 0 ? args[iVersao + 1] : null;
 const mensagem = args.filter((a, i) => !a.startsWith('--') && !(iVersao >= 0 && i === iVersao + 1)).join(' ').trim();
 const SITE = 'https://checkselt.com';
+dns.setDefaultResultOrder('ipv4first');
 const INDEXNOW = '22a5d224dc56b1099bcab224692794a7';
 
 const parar = (msg) => { console.error('\nPAROU: ' + msg); process.exit(1); };
@@ -90,26 +92,29 @@ let noAr = false;
 for (let i = 0; i < 40 && !noAr; i++) {
   await espera(15000);
   try {
-    const b = await (await fetch(`https://api.github.com/repos/byskopf/checkselt-site/pages/builds/latest`, { headers: { 'User-Agent': 'checkselt-publicar' } })).json();
+    /* A API de builds do Pages exige login: vai pelo gh, que já está autenticado. */
+    const b = JSON.parse(execFileSync('gh', ['api', 'repos/byskopf/checkselt-site/pages/builds/latest'], { encoding: 'utf8' }));
     const cfg = await (await fetch(`${SITE}/app-config.js?_=${Date.now()}`, { cache: 'no-store' })).text();
     const servida = (cfg.match(/version: '([^']+)'/) || [])[1];
     process.stdout.write(`  ${(i + 1) * 15}s: build ${b.status || '?'}${b.commit ? ' ' + b.commit.slice(0, 7) : ''}, site ${servida}\n`);
     if (b.status === 'errored') parar('o GitHub Pages falhou ao montar o site: ' + (b.error && b.error.message));
-    noAr = servida === nova && (b.commit ? b.commit === commit && b.status === 'built' : true);
+    noAr = servida === nova && b.commit === commit && b.status === 'built';
   } catch (e) { process.stdout.write('  (sem resposta: ' + e.message + ')\n'); }
 }
 if (!noAr) parar('passaram 10 minutos e o site ainda não mostra ' + nova + '. Confira em ' + SITE + '/app-config.js');
-const naoPublicos = await Promise.all(['/modelos/app.html', '/testes/app.cjs', '/scripts/publicar.mjs'].map(async p => [p, (await fetch(SITE + p, { cache: 'no-store' })).status]));
-for (const [p, s] of naoPublicos) if (s !== 404) console.log('  ATENÇÃO: ' + p + ' está público (HTTP ' + s + ')');
+for (const p of ['/modelos/app.html', '/testes/app.cjs', '/scripts/publicar.mjs']) {
+  try { const s = (await fetch(SITE + p + '?_=' + Date.now(), { cache: 'no-store' })).status; if (s !== 404) console.log('  ATENÇÃO: ' + p + ' está público (HTTP ' + s + ')'); } catch {}
+}
 console.log('no ar: ' + nova);
 
 passo('7. Buscadores');
-if (inicioMudou) {
+if (inicioMudou) try {
   const r = await fetch('https://api.indexnow.org/indexnow', {
     method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
     body: JSON.stringify({ host: 'checkselt.com', key: INDEXNOW, keyLocation: `${SITE}/${INDEXNOW}.txt`, urlList: [SITE + '/'] }),
   });
   console.log('IndexNow: HTTP ' + r.status + (r.status === 200 || r.status === 202 ? ' (aceito)' : ''));
-} else console.log('página inicial não mudou; nada a avisar');
+} catch (e) { console.log('IndexNow sem resposta (' + e.message + '); o site já está no ar, só o aviso ao Bing ficou para depois'); }
+else console.log('página inicial não mudou; nada a avisar');
 
 console.log('\nPRONTO. ' + titulo);
