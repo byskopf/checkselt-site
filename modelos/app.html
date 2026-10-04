@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="pt-BR"__AMBIENTE__>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0b2239">
+  <title>__TITULO__</title>
+  <link rel="icon" href="/favicon.svg?v=20261006" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20261006" sizes="180x180">
+__MANIFESTO__  <!-- O app do Apps Script embutido no checkselt.com. A troca entre LT e SE é pedida pelo app por
+       postMessage (contrato: docs/CHAVES_DO_APARELHO.md, seção 24, do projeto do app). -->
+  <style>
+    /* Instalado (tela cheia), o Android e o iPhone desenham a página por baixo das barras do sistema, e as
+       áreas seguras (safe-area) não chegam dentro do quadro do Google: o quadro fica só na área livre. A faixa
+       de cima fica escura (como o cabeçalho do app) e a de baixo, branca (como o rodapé). */
+    html,body{margin:0;height:100%;overflow:hidden;background:#fff}
+    body{background:linear-gradient(#0b2239 50%,#fff 50%)}
+    /* A moldura (div) estica entre as bordas da área livre; o iframe ocupa 100% dela. (Um iframe com
+       width/height auto NÃO estica pelos insets: fica no tamanho intrínseco, 300x150.) */
+    #moldura{position:fixed;top:env(safe-area-inset-top,0px);right:env(safe-area-inset-right,0px);bottom:env(safe-area-inset-bottom,0px);left:env(safe-area-inset-left,0px);background:#fff}
+    #app{display:block;width:100%;height:100%;border:0;background:#fff}
+    /* Fica POR CIMA do quadro (que é branco) até o app terminar de carregar. */
+    #carregando{position:fixed;inset:0;z-index:1;background:#fff;display:grid;place-items:center;color:#5b6b7b;font:600 15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center;padding:16px}
+    #carregando a{color:#137a50;display:inline-block;padding:10px 6px}
+  </style>
+  <script src="/app-config.js?v=__VERSAO__"></script>
+</head>
+<body>
+  <div id="carregando" role="status"><div>Abrindo o CHECK-SELT…<br><small id="plano" hidden>Se não abrir, <a id="direto" href="">tente de novo</a>.</small></div></div>
+  <div id="moldura"><iframe id="app" title="CHECK-SELT"
+    allow="geolocation *; accelerometer *; gyroscope *; magnetometer *; camera *; microphone *; clipboard-read *; clipboard-write *; fullscreen *; web-share *"
+    allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+  <script>
+    (function () {
+      var cfg = window.CHECKSELT_SITE_CONFIG || {};
+      /* /app-teste/ usa o TESTE do app; /app/ usa a produção (appUrl). */
+      var ambienteTeste = document.documentElement.getAttribute('data-ambiente') === 'teste';
+      var base = ambienteTeste ? cfg.appUrlTeste : cfg.appUrl;
+      var caminho = location.pathname.replace(/[^/]*$/, '');
+      var quadro = document.getElementById('app');
+      var carregando = document.getElementById('carregando');
+      /* Sem a configuração (por exemplo, sem internet na primeira vez), não monta um endereço quebrado. */
+      if (!base) { carregando.innerHTML = '<div>Sem conexão.<br><a href="">Tentar de novo</a></div>'; return; }
+
+      /* O token do link de foto pode ter até 3000 caracteres (?foto=…); a consulta aceita esse tamanho. */
+      function consultaValida(c) {
+        return typeof c === 'string' && c.length <= 3006 && c.indexOf('#') < 0 && (c === '' || c.charAt(0) === '?');
+      }
+      /* A marca de=… é só da passagem do PWA antigo para o site; aqui dentro ela não vale (em navegador sem
+         location.ancestorOrigins o app nem saberia que está embutido). Tira só esse par e mantém o resto. */
+      function semMarca(c) {
+        if (!c) return '';
+        var pares = c.slice(1).split('&').filter(function (p) { return p && p.split('=')[0] !== 'de'; });
+        return pares.length ? '?' + pares.join('&') : '';
+      }
+      function abrir(consulta) {
+        quadro.src = base + consulta;
+      }
+      quadro.addEventListener('load', function () { carregando.style.display = 'none'; });
+      setTimeout(function () { document.getElementById('plano').hidden = false; }, 12000);
+
+      /* O app embutido pede para trocar de módulo (LT ↔ SE) sem sair do checkselt.com. */
+      /* ---- Avisos no celular (push) e número no ícone: o service worker é do site, então quem assina é a
+         página de cima, a pedido do app embutido. ---- */
+      function responder(ev, msg) { try { ev.source.postMessage(msg, ev.origin); } catch (e) {} }
+      function pushSuportado() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+      function registro() { return navigator.serviceWorker.register('/sw.js').then(function () { return navigator.serviceWorker.ready; }); }
+      function chaveBytes(b64) {
+        var s = String(b64).replace(/-/g, '+').replace(/_/g, '/'); s += '===='.slice(0, (4 - s.length % 4) % 4);
+        var bin = atob(s), out = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+      }
+      /* Guarda {id, base, caminho} para o service worker achar o texto do aviso (IndexedDB, porque o sw não lê localStorage). */
+      function guardarId(id) {
+        return new Promise(function (ok, erro) {
+          var req = indexedDB.open('checkselt-push', 1);
+          req.onupgradeneeded = function () { req.result.createObjectStore('cfg'); };
+          req.onerror = function () { erro(req.error); };
+          req.onsuccess = function () {
+            var tx = req.result.transaction('cfg', 'readwrite');
+            tx.objectStore('cfg').put({ id: id, base: base, caminho: caminho }, 'atual');
+            tx.oncomplete = function () { ok(); }; tx.onerror = function () { erro(tx.error); };
+          };
+        });
+      }
+      function estado(ev) {
+        if (!pushSuportado()) { responder(ev, { tipo: 'checkselt-push-estado', suportado: false, permissao: 'default', inscrito: false }); return; }
+        registro().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+          responder(ev, { tipo: 'checkselt-push-estado', suportado: true, permissao: Notification.permission, inscrito: !!sub });
+        }).catch(function () { responder(ev, { tipo: 'checkselt-push-estado', suportado: false, permissao: 'default', inscrito: false }); });
+      }
+      function assinar(ev, chavePublica) {
+        if (!pushSuportado()) { responder(ev, { tipo: 'checkselt-push-erro', motivo: 'sem-suporte' }); return; }
+        if (typeof chavePublica !== 'string' || !/^[A-Za-z0-9_-]{40,200}$/.test(chavePublica)) { responder(ev, { tipo: 'checkselt-push-erro', motivo: 'chave-invalida' }); return; }
+        Notification.requestPermission().then(function (p) {
+          if (p !== 'granted') throw new Error(p === 'denied' ? 'negado' : 'sem-permissao');
+          return registro();
+        }).then(function (reg) {
+          return reg.pushManager.getSubscription().then(function (sub) {
+            return sub || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chaveBytes(chavePublica) });
+          });
+        }).then(function (sub) {
+          responder(ev, { tipo: 'checkselt-push-assinatura', assinatura: sub.toJSON() });
+        }).catch(function (e) { responder(ev, { tipo: 'checkselt-push-erro', motivo: String(e && e.message || e).slice(0, 80) }); });
+      }
+      function cancelar(ev) {
+        if (!pushSuportado()) { responder(ev, { tipo: 'checkselt-push-cancelado' }); return; }
+        registro().then(function (reg) { return reg.pushManager.getSubscription(); })
+          .then(function (sub) { return sub ? sub.unsubscribe() : true; })
+          .then(function () { responder(ev, { tipo: 'checkselt-push-cancelado' }); })
+          .catch(function (e) { responder(ev, { tipo: 'checkselt-push-erro', motivo: String(e && e.message || e).slice(0, 80) }); });
+      }
+      function badge(n) {
+        try {
+          if (n > 0 && navigator.setAppBadge) navigator.setAppBadge(n);
+          else if (navigator.clearAppBadge) navigator.clearAppBadge();
+        } catch (e) {}
+      }
+
+      /* O app embutido pede para trocar de módulo (LT ↔ SE), para cuidar dos avisos ou do número no ícone. */
+      window.addEventListener('message', function (ev) {
+        if (!/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(ev.origin)) return;
+        var d = ev.data;
+        if (!d || typeof d.tipo !== 'string') return;
+        if (d.tipo === 'checkselt-abrir') {
+          if (!consultaValida(d.consulta)) return;
+          responder(ev, { tipo: 'checkselt-abrindo' });
+          var limpa = semMarca(d.consulta);
+          try { history.replaceState(null, '', caminho + limpa); } catch (e) {}
+          abrir(limpa);
+        } else if (d.tipo === 'checkselt-push-estado') { estado(ev);
+        } else if (d.tipo === 'checkselt-push-assinar') { assinar(ev, d.chavePublica);
+        } else if (d.tipo === 'checkselt-push-cancelar') { cancelar(ev);
+        } else if (d.tipo === 'checkselt-push-id') {
+          if (typeof d.id === 'string' && /^[A-Za-z0-9_-]{16,64}$/.test(d.id)) guardarId(d.id).catch(function () {});
+        } else if (d.tipo === 'checkselt-badge') {
+          var n = Number(d.n);
+          if (isFinite(n) && n >= 0 && n < 100000) badge(Math.floor(n));
+        }
+      });
+
+      var inicial = consultaValida(location.search) ? semMarca(location.search) : '';
+      if (inicial !== location.search) { try { history.replaceState(null, '', caminho + inicial); } catch (e) {} }
+      abrir(inicial);
+    }());
+  </script>
+</body>
+</html>

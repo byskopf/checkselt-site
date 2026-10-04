@@ -1,0 +1,7 @@
+# GitHub Pages (Jekyll): o que fica fora do site publicado. São ferramentas de quem mantém o site.
+exclude:
+  - modelos
+  - testes
+  - scripts
+  - icones-fonte
+  - README.md
