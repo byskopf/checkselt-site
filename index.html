@@ -3,7 +3,24 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <style>html.abrindo-app{visibility:hidden}</style>
+  <script src="/app-config.js?v=1.0.0"></script>
+  <script>
+    /* Aberto pelo ícone instalado: vai direto para o app. */
+    (function () {
+      var instalado = (window.matchMedia && (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches)) || navigator.standalone === true;
+      if (instalado && navigator.onLine !== false && window.CHECKSELT_SITE_CONFIG) {
+        document.documentElement.classList.add('abrindo-app');
+        location.replace(CHECKSELT_SITE_CONFIG.appUrl);
+      }
+    }());
+  </script>
   <meta name="theme-color" content="#0b293d">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CHECK-SELT">
   <title>CHECK-SELT | Subestações, linhas e distribuição</title>
   <meta name="description" content="CHECK-SELT: comissionamento de obras, pendências e ferramentas de campo para subestações, linhas de transmissão e distribuição, em um só aplicativo.">
   <link rel="canonical" href="https://checkselt.com/">
@@ -17,8 +34,9 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" href="https://byskopf.github.io/check-selt/lt/favicon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="https://byskopf.github.io/check-selt/lt/apple-touch-icon.png">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/icon-192.png" sizes="192x192" type="image/png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"WebSite","name":"CHECK-SELT","url":"https://checkselt.com/","inLanguage":"pt-BR"}
   </script>
@@ -44,7 +62,13 @@
     h1 strong{color:var(--green)}
     .lead{max-width:640px;margin:0 auto;color:var(--muted);font-size:1.08rem;line-height:1.6}
     .actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:30px}
-    .btn{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:12px 22px;border-radius:14px;font-weight:800;text-decoration:none;font-size:1rem}
+    .btn{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:12px 22px;border-radius:14px;font-weight:800;text-decoration:none;font-size:1rem;font-family:inherit;border:0;cursor:pointer}
+    .aviso{position:fixed;inset:0;z-index:20;display:grid;place-items:end center;padding:16px;background:rgba(3,10,20,.6)}
+    .aviso[hidden]{display:none}
+    .aviso .caixa{width:min(100%,460px);margin-bottom:max(8px,env(safe-area-inset-bottom));padding:20px;border:1px solid var(--border);border-radius:18px;background:#0d2b44;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+    .aviso h3{margin:0 0 8px;font-size:1.1rem}
+    .aviso ol{margin:0 0 16px;padding-left:20px;color:var(--muted);line-height:1.7}
+    .aviso b{color:var(--text)}
     .btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
     .btn-primary{background:var(--green);color:#071c2e}
     .btn-primary:hover{background:var(--green-strong)}
@@ -81,14 +105,14 @@
         <h1>CHECK-<strong>SELT</strong></h1>
         <p class="lead">Ferramentas de campo, comissionamento e gestão de pendências para subestações, linhas de transmissão e distribuição, num só aplicativo.</p>
         <div class="actions">
-          <a class="btn btn-primary" href="https://byskopf.github.io/check-selt/lt/">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 18v2h14v-2"/></svg>Baixar o aplicativo
-          </a>
-          <a class="btn btn-secondary" href="https://script.google.com/macros/s/AKfycbzo_WN_PzoRhS-LhV070vmE8GDr1vJX9qEa1iqxADe6kVhNZa968olZLVVDAtObmvE/exec">
+          <button class="btn btn-primary" id="botaoInstalar" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 18v2h14v-2"/></svg><span id="textoInstalar">Baixar o aplicativo</span>
+          </button>
+          <a class="btn btn-secondary" id="botaoNavegador" href="https://script.google.com/macros/s/AKfycbzo_WN_PzoRhS-LhV070vmE8GDr1vJX9qEa1iqxADe6kVhNZa968olZLVVDAtObmvE/exec">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h8a3 3 0 0 1 3 3v11H5zM12 12h8m-3-3 3 3-3 3"/></svg>Usar no navegador
           </a>
         </div>
-        <p class="hint">Grátis. Funciona no Android, no iPhone e no computador.</p>
+        <p class="hint" id="dicaInstalar" aria-live="polite">Grátis. Funciona no Android, no iPhone e no computador.</p>
       </div>
 
       <section id="ferramentas" aria-labelledby="tFerramentas">
@@ -109,8 +133,8 @@
       <section id="instalar" aria-labelledby="tInstalar">
         <h2 id="tInstalar">Como instalar</h2>
         <div class="steps">
-          <div class="card"><h3>Toque em "Baixar o aplicativo"</h3><p>Abre a página oficial de instalação do CHECK-SELT.</p></div>
-          <div class="card"><h3>Toque em "Instalar aplicativo"</h3><p>No Android e no computador, confirme a instalação. No iPhone, use o Safari: Compartilhar → Adicionar à Tela de Início.</p></div>
+          <div class="card"><h3>Toque em "Baixar o aplicativo"</h3><p>Abra este site no Chrome (Android e computador) ou no Safari (iPhone), não dentro do WhatsApp.</p></div>
+          <div class="card"><h3>Confirme a instalação</h3><p>No Android e no computador, toque em Instalar. No iPhone: Compartilhar → Adicionar à Tela de Início.</p></div>
           <div class="card"><h3>Abra pelo ícone</h3><p>O CHECK-SELT abre em tela cheia, direto do ícone na tela inicial.</p></div>
         </div>
       </section>
@@ -121,5 +145,80 @@
       <span>Contato: <a href="mailto:check.selt@checkselt.com">check.selt@checkselt.com</a></span>
     </footer>
   </div>
+
+  <div class="aviso" id="avisoInstalar" role="dialog" aria-modal="true" aria-labelledby="tituloAviso" hidden>
+    <div class="caixa">
+      <h3 id="tituloAviso">Como instalar</h3>
+      <ol id="passosAviso"></ol>
+      <button class="btn btn-primary" id="fecharAviso" type="button">Entendi</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var cfg = window.CHECKSELT_SITE_CONFIG || {};
+      var botao = document.getElementById('botaoInstalar');
+      var texto = document.getElementById('textoInstalar');
+      var dica = document.getElementById('dicaInstalar');
+      var aviso = document.getElementById('avisoInstalar');
+      var passos = document.getElementById('passosAviso');
+      var pedido = null;
+      if (cfg.appUrl) document.getElementById('botaoNavegador').href = cfg.appUrl;
+
+      var ua = navigator.userAgent || '';
+      var iphone = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      var dentroDeApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)/i.test(ua);
+      var safari = iphone && /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS/i.test(ua);
+
+      function mostrar(itens, titulo) {
+        document.getElementById('tituloAviso').textContent = titulo || 'Como instalar';
+        passos.innerHTML = itens.map(function (t) { return '<li>' + t + '</li>'; }).join('');
+        aviso.hidden = false;
+      }
+      document.getElementById('fecharAviso').onclick = function () { aviso.hidden = true; };
+      aviso.addEventListener('click', function (e) { if (e.target === aviso) aviso.hidden = true; });
+
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+      }
+      window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); pedido = e; });
+      window.addEventListener('appinstalled', function () {
+        pedido = null;
+        texto.textContent = 'Aplicativo instalado';
+        dica.textContent = 'Pronto: abra o CHECK-SELT pelo ícone na tela inicial.';
+      });
+
+      botao.addEventListener('click', function () {
+        if (pedido) {
+          pedido.prompt();
+          pedido.userChoice.then(function (r) {
+            if (r && r.outcome === 'accepted') dica.textContent = 'Instalando… o ícone do CHECK-SELT aparece na tela inicial.';
+            pedido = null;
+          });
+          return;
+        }
+        if (dentroDeApp) {
+          mostrar(['Toque nos <b>três pontinhos</b> (ou em Compartilhar) no canto da tela.',
+            'Escolha <b>Abrir no navegador</b> (Chrome no Android, Safari no iPhone).',
+            'No navegador, toque de novo em <b>Baixar o aplicativo</b>.'], 'Abra no navegador');
+          return;
+        }
+        if (iphone && !safari) {
+          mostrar(['No iPhone, a instalação só funciona pelo <b>Safari</b>.',
+            'Abra <b>checkselt.com</b> no Safari e toque em <b>Baixar o aplicativo</b>.'], 'Use o Safari');
+          return;
+        }
+        if (iphone) {
+          mostrar(['Toque em <b>Compartilhar</b> (o quadrado com a seta para cima), na barra do Safari.',
+            'Role e toque em <b>Adicionar à Tela de Início</b>.',
+            'Toque em <b>Adicionar</b>. O ícone do CHECK-SELT aparece na tela inicial.']);
+          return;
+        }
+        mostrar(['Toque nos <b>três pontinhos</b> do Chrome, no canto da tela.',
+          'Escolha <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>).',
+          'Confirme em <b>Instalar</b>.']);
+      });
+    }());
+  </script>
 </body>
 </html>
