@@ -8,18 +8,23 @@
   <title>CHECK-SELT</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="CHECK-SELT">
   <!-- O app do Apps Script embutido no checkselt.com. A troca entre LT e SE é pedida pelo app por
        postMessage (contrato: docs/CHAVES_DO_APARELHO.md, seção 24, do projeto do app). -->
   <style>
     html,body{margin:0;height:100%;background:#fff;overflow:hidden}
     #app{position:fixed;inset:0;width:100%;height:100%;height:100dvh;border:0;display:block;background:#fff}
-    #carregando{position:fixed;inset:0;display:grid;place-items:center;color:#5b6b7b;font:600 15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center;padding:16px}
-    #carregando a{color:#178a5c}
+    /* Fica POR CIMA do quadro (que é branco) até o app terminar de carregar. */
+    #carregando{position:fixed;inset:0;z-index:1;background:#fff;display:grid;place-items:center;color:#5b6b7b;font:600 15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center;padding:16px}
+    #carregando a{color:#137a50;display:inline-block;padding:10px 6px}
   </style>
-  <script src="/app-config.js?v=1.0.2"></script>
+  <script src="/app-config.js?v=1.0.3"></script>
 </head>
 <body>
-  <div id="carregando">Abrindo o CHECK-SELT…<br><small id="plano" hidden>Se não abrir, <a id="direto" href="#">abra direto</a>.</small></div>
+  <div id="carregando" role="status"><div>Abrindo o CHECK-SELT…<br><small id="plano" hidden>Se não abrir, <a id="direto" href="">tente de novo</a>.</small></div></div>
   <iframe id="app" title="CHECK-SELT"
     allow="geolocation *; accelerometer *; gyroscope *; magnetometer *; camera *; microphone *; clipboard-read *; clipboard-write *; fullscreen *; web-share *"
     allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
@@ -32,10 +37,12 @@
       var caminho = location.pathname.replace(/[^/]*$/, '');
       var quadro = document.getElementById('app');
       var carregando = document.getElementById('carregando');
-      document.getElementById('direto').href = base;
+      /* Sem a configuração (por exemplo, sem internet na primeira vez), não monta um endereço quebrado. */
+      if (!base) { carregando.innerHTML = '<div>Sem conexão.<br><a href="">Tentar de novo</a></div>'; return; }
 
+      /* O token do link de foto pode ter até 3000 caracteres (?foto=…); a consulta aceita esse tamanho. */
       function consultaValida(c) {
-        return typeof c === 'string' && c.length <= 500 && c.indexOf('#') < 0 && (c === '' || c.charAt(0) === '?');
+        return typeof c === 'string' && c.length <= 3006 && c.indexOf('#') < 0 && (c === '' || c.charAt(0) === '?');
       }
       function abrir(consulta) {
         quadro.src = base + consulta;

@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <style>html.abrindo-app{visibility:hidden}</style>
-  <script src="/app-config.js?v=1.0.2"></script>
+  <script src="/app-config.js?v=1.0.3"></script>
   <script>
     /* Aberto pelo ícone instalado: vai direto para o app. */
     (function () {
       var instalado = (window.matchMedia && (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches)) || navigator.standalone === true;
-      if (instalado && navigator.onLine !== false && window.CHECKSELT_SITE_CONFIG) {
+      if (instalado) {
         document.documentElement.classList.add('abrindo-app');
-        location.replace(CHECKSELT_SITE_CONFIG.appUrl);
+        location.replace('/app/' + location.search.replace(/^\?origem=pwa&?/, '?').replace(/^\?$/, ''));
       }
     }());
   </script>
@@ -53,8 +53,8 @@
     body{margin:0;min-height:100vh;color:var(--text);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased;
       background:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px),radial-gradient(circle at 50% 0,#164566 0,var(--navy-900) 38%,var(--navy-950) 100%);background-size:34px 34px,34px 34px,auto}
     a{color:inherit}
-    .wrap{width:min(100% - 32px,1040px);margin:0 auto}
-    header{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+    .wrap{width:min(100% - 32px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px),1040px);margin:0 auto}
+    header{display:flex;align-items:center;justify-content:space-between;padding:max(22px,env(safe-area-inset-top,0px)) 0 22px}
     .logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.02em;text-decoration:none}
     .logo svg{width:30px;height:38px}
     .logo svg rect,.logo svg path{fill:none;stroke:var(--text);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
@@ -92,6 +92,13 @@
     .card p{margin:0;color:var(--muted);font-size:.9rem;line-height:1.55}
     .steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;counter-reset:passo}
     .steps .card h3::before{counter-increment:passo;content:counter(passo);display:inline-grid;place-items:center;width:26px;height:26px;margin-right:8px;border-radius:50%;background:rgba(92,224,168,.16);color:var(--green);font-size:.85rem}
+    .faq{display:grid;gap:10px}
+    .faq details{border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:0 18px}
+    .faq summary{cursor:pointer;padding:16px 0;font-weight:700;list-style:none;display:flex;justify-content:space-between;gap:12px}
+    .faq summary::-webkit-details-marker{display:none}
+    .faq summary::after{content:"+";content:"+" / "";color:var(--green);font-weight:800}
+    .faq details[open] summary::after{content:"–";content:"–" / ""}
+    .faq p{margin:0 0 16px;color:var(--muted);font-size:.92rem;line-height:1.6}
     footer{padding:30px 0 40px;border-top:1px solid var(--border);margin-top:20px;color:var(--muted);font-size:.86rem;display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:space-between}
     footer a{color:var(--green);text-decoration:none}
     @media(max-width:820px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.steps{grid-template-columns:1fr}}
@@ -105,7 +112,7 @@
         <svg viewBox="0 0 64 80" aria-hidden="true"><rect x="12" y="15" width="40" height="42" rx="5"/><path class="check" d="M21 37l8 8 15-17"/><path d="M32 3v12M32 57v20"/></svg>
         <span>CHECK-<b>SELT</b></span>
       </a>
-      <nav aria-label="Seções"><a href="#ferramentas">Ferramentas</a><a href="#instalar">Como instalar</a><a href="#contato">Contato</a></nav>
+      <nav aria-label="Seções"><a href="#quem">Para quem é</a><a href="#ferramentas">Ferramentas</a><a href="#instalar">Como instalar</a><a href="#duvidas">Dúvidas</a></nav>
     </header>
 
     <main>
@@ -117,11 +124,11 @@
           <button class="btn btn-primary" id="botaoInstalar" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 18v2h14v-2"/></svg><span id="textoInstalar">Baixar o aplicativo</span>
           </button>
-          <a class="btn btn-secondary" id="botaoNavegador" href="https://script.google.com/macros/s/AKfycbzo_WN_PzoRhS-LhV070vmE8GDr1vJX9qEa1iqxADe6kVhNZa968olZLVVDAtObmvE/exec">
+          <a class="btn btn-secondary" id="botaoNavegador" href="/app/">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h8a3 3 0 0 1 3 3v11H5zM12 12h8m-3-3 3 3-3 3"/></svg>Usar no navegador
           </a>
         </div>
-        <p class="hint" id="dicaInstalar" aria-live="polite">Grátis. Funciona no Android, no iPhone e no computador.</p>
+        <p class="hint" id="dicaInstalar" aria-live="polite">Grátis. Funciona no Android, no iPhone e no computador. Já instalou? Abra pelo ícone.</p>
         <div class="compartilhar">
           <button class="btn-link" id="botaoCompartilhar" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>Compartilhar
@@ -133,17 +140,25 @@
         <p class="hint" id="statusCompartilhar" role="status" aria-live="polite"></p>
       </div>
 
+      <section id="quem" aria-labelledby="tQuem">
+        <h2 id="tQuem">Para quem é</h2>
+        <div class="grid">
+          <div class="card"><h3>Fiscal e técnico</h3><p>Acompanhe obras na Transmissão e na Subestação, registre pendências com foto, envie à prestadora, confira a correção e gere relatórios em PDF e Excel.</p></div>
+          <div class="card"><h3>Prestadora de serviço</h3><p>Entre só com o código do lote, sem cadastro: veja as pendências, informe a correção com fotos e gere a folha de conferência.</p></div>
+          <div class="card"><h3>Equipe de campo</h3><p>Localizadores e calculadoras para o dia a dia: estrutura, equipamento, subestação, defeito na linha, TC / TP, cesto e antena.</p></div>
+        </div>
+      </section>
+
       <section id="ferramentas" aria-labelledby="tFerramentas">
         <h2 id="tFerramentas">O que você encontra no CHECK-SELT</h2>
         <div class="grid">
-          <div class="card"><h3>Comissionamento e pendências</h3><p>Na Transmissão e na Subestação, acompanhe obras, pendências, envio à prestadora e conferência da correção, com relatórios em PDF.</p></div>
-          <div class="card"><h3>Para a prestadora</h3><p>Entre só com o código do lote, sem cadastro: veja as pendências, informe a correção com fotos e gere a folha de conferência em PDF.</p></div>
+          <div class="card"><h3>Comissionamento e pendências</h3><p>Na Transmissão e na Subestação, acompanhe obras, pendências, envio à prestadora e conferência da correção, com relatórios em PDF e Excel.</p></div>
           <div class="card"><h3>Localizador de Pisca</h3><p>Estime a estrutura do defeito na linha a partir do LDF informado pelo relé.</p></div>
-          <div class="card"><h3>Localizador de Estrutura</h3><p>Busque uma estrutura pelo número e abra a ficha, com dados técnicos e mapa.</p></div>
+          <div class="card"><h3>Localizar estrutura</h3><p>Busque uma estrutura pelo número e abra a ficha, com dados técnicos e mapa.</p></div>
           <div class="card"><h3>Gibi / Cesto / Bastão</h3><p>Verifique se o gibi, o cesto do caminhão e o bastão atendem a estrutura e o cabo.</p></div>
-          <div class="card"><h3>Localizador de Equipamento</h3><p>Na distribuição, ache o equipamento pelo número operativo ou pelo GPS, com ficha, mapa e elo-fusível.</p></div>
+          <div class="card"><h3>Localizar equipamento</h3><p>Na distribuição, ache o equipamento pelo número operativo ou pelo GPS, com ficha, mapa e elo-fusível.</p></div>
           <div class="card"><h3>TC / TP</h3><p>Dimensione a medição e a proteção do transformador: TC, TP e elo.</p></div>
-          <div class="card"><h3>Localizador de Subestação</h3><p>Encontre a subestação pelo nome ou sigla, com dados e rota.</p></div>
+          <div class="card"><h3>Localizar subestação</h3><p>Encontre a subestação pelo nome ou sigla, com dados e rota.</p></div>
           <div class="card"><h3>Antena Direção</h3><p>Ache a antena de celular mais próxima da operadora, para onde apontar e o ganho recomendado.</p></div>
         </div>
       </section>
@@ -151,21 +166,32 @@
       <section id="instalar" aria-labelledby="tInstalar">
         <h2 id="tInstalar">Como instalar</h2>
         <div class="steps">
-          <div class="card"><h3>Toque em "Baixar o aplicativo"</h3><p>Abra este site no Chrome (Android e computador) ou no Safari (iPhone), não dentro do WhatsApp.</p></div>
-          <div class="card"><h3>Confirme a instalação</h3><p>No Android e no computador, toque em Instalar. No iPhone: Compartilhar → Adicionar à Tela de Início.</p></div>
+          <div class="card"><h3>Toque em “Baixar o aplicativo”</h3><p>Abra este site no Chrome (Android e computador) ou no Safari (iPhone), não dentro do WhatsApp.</p></div>
+          <div class="card"><h3>Confirme a instalação</h3><p>No Android, toque em Instalar; no computador, clique em Instalar. No iPhone (Safari): ••• → Compartilhar → Adicionar à Tela de Início.</p></div>
           <div class="card"><h3>Abra pelo ícone</h3><p>O CHECK-SELT abre em tela cheia, direto do ícone na tela inicial.</p></div>
+        </div>
+      </section>
+
+      <section id="duvidas" aria-labelledby="tDuvidas">
+        <h2 id="tDuvidas">Dúvidas</h2>
+        <div class="faq">
+          <details><summary>Preciso de cadastro?</summary><p>Fiscais e técnicos fazem o cadastro no próprio aplicativo, e o acesso é liberado pela administração. A prestadora não precisa de cadastro: entra com o código do lote que recebeu.</p></details>
+          <details><summary>Funciona sem internet?</summary><p>O CHECK-SELT precisa de internet para abrir. Se o sinal cair no meio do trabalho, o que você registrou fica em “Aguardando sinal” no aparelho e sobe sozinho quando a conexão voltar, desde que o app esteja aberto (o da Subestação sobe ao abrir a Subestação).</p></details>
+          <details><summary>Quanto custa?</summary><p>Nada. É grátis para quem usa.</p></details>
+          <details><summary>Não aparece a opção de instalar. E agora?</summary><p>Abra checkselt.com direto no Chrome (Android ou computador) ou no Safari (iPhone), e não dentro do WhatsApp. No Chrome, também dá para instalar pelo menu ⋮ → Instalar app.</p></details>
+          <details><summary>Já tinha o app instalado. Preciso trocar?</summary><p>Recomendamos instalar o ícone por este site. Antes, abra o app que você já usava, com internet, e espere o aviso “Aguardando sinal” sumir. Só depois apague o ícone antigo. Na primeira vez pelo checkselt.com, entre de novo com o mesmo usuário e senha, de preferência com sinal bom.</p></details>
         </div>
       </section>
     </main>
 
-    <footer id="contato">
-      <span>© 2026 CHECK-SELT</span>
-      <span>Contato: <a href="mailto:check.selt@checkselt.com">check.selt@checkselt.com</a></span>
+    <footer>
+      <span>© 2026 CHECK-SELT · Subestações, linhas de transmissão e distribuição</span>
+      <span id="contato">Contato: <a href="mailto:check.selt@checkselt.com">check.selt@checkselt.com</a></span>
     </footer>
   </div>
 
   <div class="aviso" id="avisoInstalar" role="dialog" aria-modal="true" aria-labelledby="tituloAviso" hidden>
-    <div class="caixa">
+    <div class="caixa" id="caixaAviso" tabindex="-1" style="outline:none">
       <h3 id="tituloAviso">Como instalar</h3>
       <ol id="passosAviso"></ol>
       <button class="btn btn-primary" id="fecharAviso" type="button">Entendi</button>
@@ -181,20 +207,34 @@
       var aviso = document.getElementById('avisoInstalar');
       var passos = document.getElementById('passosAviso');
       var pedido = null;
-      if (cfg.appUrl) document.getElementById('botaoNavegador').href = cfg.appUrl;
+      var jaInstalado = false;
 
       var ua = navigator.userAgent || '';
       var iphone = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var dentroDeApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)/i.test(ua);
-      var safari = iphone && /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS/i.test(ua);
+      var safari = iphone && /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS|GSA\//i.test(ua);
 
+      var focoAntes = null;
       function mostrar(itens, titulo) {
         document.getElementById('tituloAviso').textContent = titulo || 'Como instalar';
         passos.innerHTML = itens.map(function (t) { return '<li>' + t + '</li>'; }).join('');
+        focoAntes = document.activeElement;
+        document.documentElement.style.overflow = 'hidden';
         aviso.hidden = false;
+        document.getElementById('caixaAviso').focus();
       }
-      document.getElementById('fecharAviso').onclick = function () { aviso.hidden = true; };
-      aviso.addEventListener('click', function (e) { if (e.target === aviso) aviso.hidden = true; });
+      function fechar() {
+        aviso.hidden = true;
+        document.documentElement.style.overflow = '';
+        if (focoAntes && focoAntes.focus) focoAntes.focus();
+      }
+      document.getElementById('fecharAviso').onclick = fechar;
+      aviso.addEventListener('click', function (e) { if (e.target === aviso) fechar(); });
+      document.addEventListener('keydown', function (e) {
+        if (aviso.hidden) return;
+        if (e.key === 'Escape') { e.preventDefault(); fechar(); }
+        else if (e.key === 'Tab') { e.preventDefault(); document.getElementById('fecharAviso').focus(); }
+      });
 
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
@@ -202,6 +242,7 @@
       window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); pedido = e; });
       window.addEventListener('appinstalled', function () {
         pedido = null;
+        jaInstalado = true;
         texto.textContent = 'Aplicativo instalado';
         dica.textContent = 'Pronto: abra o CHECK-SELT pelo ícone na tela inicial.';
       });
@@ -218,6 +259,10 @@
       });
 
       botao.addEventListener('click', function () {
+        if (jaInstalado) {
+          mostrar(['O CHECK-SELT já está instalado.', 'Abra pelo <b>ícone</b> na tela inicial.'], 'Já instalado');
+          return;
+        }
         if (pedido) {
           pedido.prompt();
           pedido.userChoice.then(function (r) {
@@ -228,22 +273,24 @@
         }
         if (dentroDeApp) {
           mostrar(['Toque nos <b>três pontinhos</b> (ou em Compartilhar) no canto da tela.',
-            'Escolha <b>Abrir no navegador</b> (Chrome no Android, Safari no iPhone).',
+            'No menu que abrir, escolha <b>Abrir no Chrome</b> ou <b>Abrir no navegador externo</b> (no iPhone, <b>Abrir no Safari</b>). Não use os botões desta página.',
             'No navegador, toque de novo em <b>Baixar o aplicativo</b>.'], 'Abra no navegador');
           return;
         }
         if (iphone && !safari) {
-          mostrar(['No iPhone, a instalação só funciona pelo <b>Safari</b>.',
+          mostrar(['No iPhone, instale pelo <b>Safari</b>.',
             'Abra <b>checkselt.com</b> no Safari e toque em <b>Baixar o aplicativo</b>.'], 'Use o Safari');
           return;
         }
         if (iphone) {
-          mostrar(['Toque em <b>Compartilhar</b> (o quadrado com a seta para cima), na barra do Safari.',
+          mostrar(['Toque em <b>•••</b> (canto da barra do Safari) e depois em <b>Compartilhar</b>. Se o quadrado com a seta já aparecer na barra, toque direto nele.',
             'Role e toque em <b>Adicionar à Tela de Início</b>.',
+            'Se aparecer <b>Abrir como App da Web</b>, deixe ligado.',
             'Toque em <b>Adicionar</b>. O ícone do CHECK-SELT aparece na tela inicial.']);
           return;
         }
-        mostrar(['Toque nos <b>três pontinhos</b> do Chrome, no canto da tela.',
+        mostrar(['Se aparecer <b>Abrir no Chrome</b> no menu, toque nele primeiro.',
+          'Toque nos <b>três pontinhos</b> do Chrome, no canto da tela.',
           'Escolha <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>).',
           'Confirme em <b>Instalar</b>.']);
       });
