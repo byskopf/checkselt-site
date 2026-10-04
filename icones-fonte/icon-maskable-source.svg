@@ -1,16 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <!-- Versão "maskable" (o Android recorta em círculo/losango): fundo inteiro, marca a 82% na zona segura. -->
-  <defs>
-    <radialGradient id="bg" cx="50%" cy="38%" r="72%">
-      <stop stop-color="#1f9a73"/>
-      <stop offset="1" stop-color="#0e5a43"/>
-    </radialGradient>
-  </defs>
-  <rect width="512" height="512" fill="url(#bg)"/>
-  <circle cx="256" cy="256" r="176" fill="#ffffff" opacity=".06"/>
+  <!-- Versão "maskable" (o Android recorta em círculo/losango): fundo branco inteiro, marca a 82% na zona segura. -->
+  <rect width="512" height="512" fill="#ffffff"/>
   <g transform="translate(256 256) scale(.82) translate(-256 -256)">
-    <rect x="151" y="143" width="210" height="226" rx="25" fill="none" stroke="#ffffff" stroke-width="25"/>
-    <path d="m192 255 59 59 83-101" fill="none" stroke="#ffffff" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M256 72v71M256 369v71" fill="none" stroke="#ffffff" stroke-width="25" stroke-linecap="round"/>
+    <rect x="151" y="143" width="210" height="226" rx="25" fill="none" stroke="#0b2239" stroke-width="25"/>
+    <path d="m192 255 59 59 83-101" fill="none" stroke="#1e8f6c" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M256 72v71M256 369v71" fill="none" stroke="#0b2239" stroke-width="25" stroke-linecap="round"/>
   </g>
 </svg>
