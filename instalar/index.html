@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="pt-BR" data-app="/app/">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0b2239">
+  <title>Instalar o CHECK-SELT</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="CHECK-SELT">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
+  <!-- Tela de passagem do ícone antigo para o app do checkselt.com (o app manda para cá, em _top, com a mesma
+       consulta que mandaria ao /app/). Aberta já instalada, ou se o navegador disser que o app está instalado,
+       segue direto para o app. -->
+  <style>html.seguindo{visibility:hidden}</style>
+  <script>
+    (function () {
+      var app = document.documentElement.getAttribute('data-app');
+      function semMarca(c) {
+        var pares = String(c || '').replace(/^\?/, '').split('&').filter(function (p) { return p && p.split('=')[0] !== 'de'; });
+        return pares.length ? '?' + pares.join('&') : '';
+      }
+      var consulta = semMarca(location.search);
+      if (consulta.length > 3006 || consulta.indexOf('#') >= 0) consulta = '';
+      window.CHECKSELT_DESTINO = app + consulta;
+      var instalado = (window.matchMedia && (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches)) || navigator.standalone === true;
+      if (instalado) { document.documentElement.classList.add('seguindo'); location.replace(window.CHECKSELT_DESTINO); }
+    }());
+  </script>
+  <style>
+    :root{--fundo:#061526;--superficie:rgba(13,43,68,.82);--borda:rgba(206,230,244,.16);--texto:#f4f8fb;--suave:#b8c7d5;--verde:#5ce0a8;--verde2:#43d493}
+    *{box-sizing:border-box}
+    html{background:var(--fundo)}
+    body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px max(16px,env(safe-area-inset-bottom,0px));color:var(--texto);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased;background:radial-gradient(circle at 50% 0,#164566 0,#0b2239 40%,var(--fundo) 100%)}
+    main{width:min(100%,440px);text-align:center}
+    .logo{width:64px;height:80px;margin:0 auto 8px;display:block}
+    .logo rect,.logo path{fill:none;stroke:var(--texto);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+    .logo .check{stroke:var(--verde)}
+    h1{margin:6px 0 8px;font-size:1.6rem;line-height:1.2}
+    h1 b{color:var(--verde)}
+    p{margin:0 0 18px;color:var(--suave);font-size:1rem;line-height:1.55}
+    .botoes{display:grid;gap:12px;margin-top:8px}
+    .btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:12px 18px;border-radius:14px;font:inherit;font-size:1.05rem;font-weight:800;text-decoration:none;border:0;cursor:pointer}
+    .btn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+    .primario{background:var(--verde);color:#071c2e}
+    .primario:hover{background:var(--verde2)}
+    .secundario{border:1px solid var(--borda);background:rgba(255,255,255,.06);color:var(--texto)}
+    .passos{margin:4px 0 16px;padding:16px 16px 16px 34px;border:1px solid var(--borda);border-radius:14px;background:var(--superficie);text-align:left;color:var(--suave);line-height:1.7;font-size:.95rem}
+    .passos b{color:var(--texto)}
+    [hidden]{display:none!important}
+  </style>
+</head>
+<body>
+  <main>
+    <svg class="logo" viewBox="0 0 64 80" aria-hidden="true"><rect x="12" y="15" width="40" height="42" rx="5"/><path class="check" d="M21 37l8 8 15-17"/><path d="M32 3v12M32 57v20"/></svg>
+
+    <section id="telaInstalar">
+      <h1>Instale o <b>CHECK-SELT</b></h1>
+      <p id="explicacao">O CHECK-SELT agora fica no endereço <b>checkselt.com</b>. Instale o ícone novo: depois é só abrir por ele.</p>
+      <ol class="passos" id="passos" hidden></ol>
+      <div class="botoes">
+        <button class="btn primario" id="instalar" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 18v2h14v-2"/></svg>Instalar o CHECK-SELT
+        </button>
+        <a class="btn secundario" id="semInstalar" href="/app/">Usar sem instalar</a>
+      </div>
+    </section>
+
+    <section id="telaPronto" hidden>
+      <h1>Pronto!</h1>
+      <p>Abra o CHECK-SELT pelo <b>ícone novo</b> e remova o ícone antigo.</p>
+      <div class="botoes">
+        <a class="btn primario" id="abrirAgora" href="/app/">Abrir agora</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var destino = window.CHECKSELT_DESTINO;
+      document.getElementById('semInstalar').href = destino;
+      document.getElementById('abrirAgora').href = destino;
+      var passos = document.getElementById('passos');
+      var pedido = null;
+
+      var ua = navigator.userAgent || '';
+      var iphone = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      var dentroDeApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)/i.test(ua);
+      var safari = iphone && /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS|GSA\//i.test(ua);
+
+      function mostrarPassos(itens) {
+        passos.innerHTML = itens.map(function (t) { return '<li>' + t + '</li>'; }).join('');
+        passos.hidden = false;
+        passos.scrollIntoView({ block: 'nearest' });
+      }
+      function pronto() {
+        document.getElementById('telaInstalar').hidden = true;
+        document.getElementById('telaPronto').hidden = false;
+      }
+
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () {});
+      window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); pedido = e; });
+      window.addEventListener('appinstalled', function () { pedido = null; pronto(); });
+
+      /* O navegador diz que o app do site já está instalado (Chrome no Android): segue direto. */
+      if (navigator.getInstalledRelatedApps) {
+        navigator.getInstalledRelatedApps().then(function (apps) {
+          if (apps && apps.length) { document.documentElement.classList.add('seguindo'); location.replace(destino); }
+        }).catch(function () {});
+      }
+
+      document.getElementById('instalar').addEventListener('click', function () {
+        if (pedido) {
+          pedido.prompt();
+          pedido.userChoice.then(function (r) { if (r && r.outcome === 'accepted') pronto(); pedido = null; });
+          return;
+        }
+        if (dentroDeApp) {
+          mostrarPassos(['Toque nos <b>três pontinhos</b> (ou em Compartilhar) no canto da tela.',
+            'No menu, escolha <b>Abrir no Chrome</b> ou <b>Abrir no navegador externo</b> (no iPhone, <b>Abrir no Safari</b>).',
+            'Lá, toque de novo em <b>Instalar o CHECK-SELT</b>.']);
+          return;
+        }
+        if (iphone && !safari) {
+          mostrarPassos(['No iPhone, instale pelo <b>Safari</b>.', 'Abra <b>checkselt.com</b> no Safari e toque em <b>Baixar o aplicativo</b>.']);
+          return;
+        }
+        if (iphone) {
+          mostrarPassos(['Toque em <b>•••</b> (canto da barra do Safari) e depois em <b>Compartilhar</b>. Se o quadrado com a seta já aparecer na barra, toque direto nele.',
+            'Role e toque em <b>Adicionar à Tela de Início</b>.',
+            'Se aparecer <b>Abrir como App da Web</b>, deixe ligado.',
+            'Toque em <b>Adicionar</b>. Depois abra pelo ícone novo e remova o antigo.']);
+          return;
+        }
+        mostrarPassos(['Se aparecer <b>Abrir no Chrome</b> no menu, toque nele primeiro.',
+          'Toque nos <b>três pontinhos</b> do Chrome, no canto da tela.',
+          'Escolha <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>) e confirme.',
+          'Depois abra pelo ícone novo e remova o antigo.']);
+      });
+    }());
+  </script>
+</body>
+</html>
