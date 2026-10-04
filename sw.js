@@ -1,10 +1,10 @@
 /* Service worker do site checkselt.com: guarda a página inicial para abrir sem internet e torna o site
    instalável. O app em si roda no Apps Script, dentro de /app/; essas páginas NÃO vão para o cache (sem
    internet o app não funciona mesmo, e uma cópia velha montaria um endereço quebrado). */
-importScripts('/app-config.js?v=1.0.4');
+importScripts('/app-config.js?v=1.0.5');
 var VERSAO = (self.CHECKSELT_SITE_CONFIG && self.CHECKSELT_SITE_CONFIG.version) || '0';
 var CACHE = 'checkselt-site-' + VERSAO;
-var BASE = ['/', '/index.html', '/app-config.js?v=' + VERSAO, '/manifest.json', '/offline.html', '/favicon.svg',
+var BASE = ['/', '/index.html', '/app-config.js?v=' + VERSAO, '/manifest.json', '/offline.html', '/favicon.svg'+'?v=20261005',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-192.png', '/icon-maskable-512.png', '/apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {
