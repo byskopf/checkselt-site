@@ -11,8 +11,12 @@
   <!-- O app do Apps Script embutido no checkselt.com. A troca entre LT e SE é pedida pelo app por
        postMessage (contrato: docs/CHAVES_DO_APARELHO.md, seção 24, do projeto do app). -->
   <style>
-    html,body{margin:0;height:100%;background:#fff;overflow:hidden}
-    #app{position:fixed;inset:0;width:100%;height:100%;height:100dvh;border:0;display:block;background:#fff}
+    /* Instalado (tela cheia), o Android e o iPhone desenham a página por baixo das barras do sistema, e as
+       áreas seguras (safe-area) não chegam dentro do quadro do Google: o quadro fica só na área livre. A faixa
+       de cima fica escura (como o cabeçalho do app) e a de baixo, branca (como o rodapé). */
+    html,body{margin:0;height:100%;overflow:hidden;background:#fff}
+    body{background:linear-gradient(#0b2239 50%,#fff 50%)}
+    #app{position:fixed;top:env(safe-area-inset-top,0px);right:env(safe-area-inset-right,0px);bottom:env(safe-area-inset-bottom,0px);left:env(safe-area-inset-left,0px);width:auto;height:auto;border:0;display:block;background:#fff}
     /* Fica POR CIMA do quadro (que é branco) até o app terminar de carregar. */
     #carregando{position:fixed;inset:0;z-index:1;background:#fff;display:grid;place-items:center;color:#5b6b7b;font:600 15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center;padding:16px}
     #carregando a{color:#137a50;display:inline-block;padding:10px 6px}
