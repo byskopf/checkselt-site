@@ -1,6 +1,6 @@
 /* Service worker do site checkselt.com: guarda a página para abrir sem internet e torna o site
    instalável. O app em si roda no Apps Script (appUrl); aqui é só a porta de entrada. */
-importScripts('/app-config.js?v=1.0.1');
+importScripts('/app-config.js?v=1.0.2');
 var VERSAO = (self.CHECKSELT_SITE_CONFIG && self.CHECKSELT_SITE_CONFIG.version) || '0';
 var CACHE = 'checkselt-site-' + VERSAO;
 var BASE = ['/', '/index.html', '/app-config.js', '/manifest.json', '/offline.html', '/favicon.svg',
