@@ -47,6 +47,13 @@
       function consultaValida(c) {
         return typeof c === 'string' && c.length <= 3006 && c.indexOf('#') < 0 && (c === '' || c.charAt(0) === '?');
       }
+      /* A marca de=… é só da passagem do PWA antigo para o site; aqui dentro ela não vale (em navegador sem
+         location.ancestorOrigins o app nem saberia que está embutido). Tira só esse par e mantém o resto. */
+      function semMarca(c) {
+        if (!c) return '';
+        var pares = c.slice(1).split('&').filter(function (p) { return p && p.split('=')[0] !== 'de'; });
+        return pares.length ? '?' + pares.join('&') : '';
+      }
       function abrir(consulta) {
         quadro.src = base + consulta;
       }
@@ -59,11 +66,14 @@
         var d = ev.data;
         if (!d || d.tipo !== 'checkselt-abrir' || !consultaValida(d.consulta)) return;
         try { ev.source.postMessage({ tipo: 'checkselt-abrindo' }, ev.origin); } catch (e) {}
-        try { history.replaceState(null, '', caminho + d.consulta); } catch (e) {}
-        abrir(d.consulta);
+        var limpa = semMarca(d.consulta);
+        try { history.replaceState(null, '', caminho + limpa); } catch (e) {}
+        abrir(limpa);
       });
 
-      abrir(consultaValida(location.search) ? location.search : '');
+      var inicial = consultaValida(location.search) ? semMarca(location.search) : '';
+      if (inicial !== location.search) { try { history.replaceState(null, '', caminho + inicial); } catch (e) {} }
+      abrir(inicial);
     }());
   </script>
 </body>
