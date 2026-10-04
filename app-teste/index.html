@@ -24,7 +24,7 @@
     #carregando{position:fixed;inset:0;z-index:1;background:#fff;display:grid;place-items:center;color:#5b6b7b;font:600 15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center;padding:16px}
     #carregando a{color:#137a50;display:inline-block;padding:10px 6px}
   </style>
-  <script src="/app-config.js?v=1.0.3"></script>
+  <script src="/app-config.js?v=1.0.4"></script>
 </head>
 <body>
   <div id="carregando" role="status"><div>Abrindo o CHECK-SELT…<br><small id="plano" hidden>Se não abrir, <a id="direto" href="">tente de novo</a>.</small></div></div>
@@ -61,14 +61,84 @@
       setTimeout(function () { document.getElementById('plano').hidden = false; }, 12000);
 
       /* O app embutido pede para trocar de módulo (LT ↔ SE) sem sair do checkselt.com. */
+      /* ---- Avisos no celular (push) e número no ícone: o service worker é do site, então quem assina é a
+         página de cima, a pedido do app embutido. ---- */
+      function responder(ev, msg) { try { ev.source.postMessage(msg, ev.origin); } catch (e) {} }
+      function pushSuportado() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+      function registro() { return navigator.serviceWorker.register('/sw.js').then(function () { return navigator.serviceWorker.ready; }); }
+      function chaveBytes(b64) {
+        var s = String(b64).replace(/-/g, '+').replace(/_/g, '/'); s += '===='.slice(0, (4 - s.length % 4) % 4);
+        var bin = atob(s), out = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+      }
+      /* Guarda {id, base, caminho} para o service worker achar o texto do aviso (IndexedDB, porque o sw não lê localStorage). */
+      function guardarId(id) {
+        return new Promise(function (ok, erro) {
+          var req = indexedDB.open('checkselt-push', 1);
+          req.onupgradeneeded = function () { req.result.createObjectStore('cfg'); };
+          req.onerror = function () { erro(req.error); };
+          req.onsuccess = function () {
+            var tx = req.result.transaction('cfg', 'readwrite');
+            tx.objectStore('cfg').put({ id: id, base: base, caminho: caminho }, 'atual');
+            tx.oncomplete = function () { ok(); }; tx.onerror = function () { erro(tx.error); };
+          };
+        });
+      }
+      function estado(ev) {
+        if (!pushSuportado()) { responder(ev, { tipo: 'checkselt-push-estado', suportado: false, permissao: 'default', inscrito: false }); return; }
+        registro().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+          responder(ev, { tipo: 'checkselt-push-estado', suportado: true, permissao: Notification.permission, inscrito: !!sub });
+        }).catch(function () { responder(ev, { tipo: 'checkselt-push-estado', suportado: false, permissao: 'default', inscrito: false }); });
+      }
+      function assinar(ev, chavePublica) {
+        if (!pushSuportado()) { responder(ev, { tipo: 'checkselt-push-erro', motivo: 'sem-suporte' }); return; }
+        if (typeof chavePublica !== 'string' || !/^[A-Za-z0-9_-]{40,200}$/.test(chavePublica)) { responder(ev, { tipo: 'checkselt-push-erro', motivo: 'chave-invalida' }); return; }
+        Notification.requestPermission().then(function (p) {
+          if (p !== 'granted') throw new Error(p === 'denied' ? 'negado' : 'sem-permissao');
+          return registro();
+        }).then(function (reg) {
+          return reg.pushManager.getSubscription().then(function (sub) {
+            return sub || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chaveBytes(chavePublica) });
+          });
+        }).then(function (sub) {
+          responder(ev, { tipo: 'checkselt-push-assinatura', assinatura: sub.toJSON() });
+        }).catch(function (e) { responder(ev, { tipo: 'checkselt-push-erro', motivo: String(e && e.message || e).slice(0, 80) }); });
+      }
+      function cancelar(ev) {
+        if (!pushSuportado()) { responder(ev, { tipo: 'checkselt-push-cancelado' }); return; }
+        registro().then(function (reg) { return reg.pushManager.getSubscription(); })
+          .then(function (sub) { return sub ? sub.unsubscribe() : true; })
+          .then(function () { responder(ev, { tipo: 'checkselt-push-cancelado' }); })
+          .catch(function (e) { responder(ev, { tipo: 'checkselt-push-erro', motivo: String(e && e.message || e).slice(0, 80) }); });
+      }
+      function badge(n) {
+        try {
+          if (n > 0 && navigator.setAppBadge) navigator.setAppBadge(n);
+          else if (navigator.clearAppBadge) navigator.clearAppBadge();
+        } catch (e) {}
+      }
+
+      /* O app embutido pede para trocar de módulo (LT ↔ SE), para cuidar dos avisos ou do número no ícone. */
       window.addEventListener('message', function (ev) {
         if (!/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(ev.origin)) return;
         var d = ev.data;
-        if (!d || d.tipo !== 'checkselt-abrir' || !consultaValida(d.consulta)) return;
-        try { ev.source.postMessage({ tipo: 'checkselt-abrindo' }, ev.origin); } catch (e) {}
-        var limpa = semMarca(d.consulta);
-        try { history.replaceState(null, '', caminho + limpa); } catch (e) {}
-        abrir(limpa);
+        if (!d || typeof d.tipo !== 'string') return;
+        if (d.tipo === 'checkselt-abrir') {
+          if (!consultaValida(d.consulta)) return;
+          responder(ev, { tipo: 'checkselt-abrindo' });
+          var limpa = semMarca(d.consulta);
+          try { history.replaceState(null, '', caminho + limpa); } catch (e) {}
+          abrir(limpa);
+        } else if (d.tipo === 'checkselt-push-estado') { estado(ev);
+        } else if (d.tipo === 'checkselt-push-assinar') { assinar(ev, d.chavePublica);
+        } else if (d.tipo === 'checkselt-push-cancelar') { cancelar(ev);
+        } else if (d.tipo === 'checkselt-push-id') {
+          if (typeof d.id === 'string' && /^[A-Za-z0-9_-]{16,64}$/.test(d.id)) guardarId(d.id).catch(function () {});
+        } else if (d.tipo === 'checkselt-badge') {
+          var n = Number(d.n);
+          if (isFinite(n) && n >= 0 && n < 100000) badge(Math.floor(n));
+        }
       });
 
       var inicial = consultaValida(location.search) ? semMarca(location.search) : '';
