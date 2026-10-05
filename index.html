@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <style>html.abrindo-app{visibility:hidden}</style>
-  <script src="/app-config.js?v=1.0.14"></script>
+  <script src="/app-config.js?v=1.0.15"></script>
   <script>
     /* Aberto pelo ícone instalado: vai direto para o app. */
     (function () {
@@ -325,6 +325,12 @@
             'Role e toque em <b>Adicionar à Tela de Início</b>.',
             'Se aparecer <b>Abrir como App da Web</b>, deixe ligado.',
             'Toque em <b>Adicionar</b>. O ícone do CHECK-SELT aparece na tela inicial.']);
+          return;
+        }
+        if (!android && !iphone) {
+          mostrar(['Se o CHECK-SELT <b>já estiver instalado</b> neste computador, o Chrome não oferece de novo: abra pelo atalho no <b>menu Iniciar</b> ou na <b>área de trabalho</b>.',
+            'Para instalar: clique no ícone de <b>instalar</b> na barra de endereço (o monitor com a seta), à direita.',
+            'Ou clique nos <b>três pontinhos ⋮</b> do Chrome → <b>Transmitir, salvar e compartilhar</b> → <b>Instalar página como app</b>.'], 'Instalar no computador');
           return;
         }
         mostrar(['Se aparecer <b>Abrir no Chrome</b> no menu, toque nele primeiro.',

@@ -195,6 +195,12 @@
             'Toque em <b>Adicionar</b>. Depois abra pelo ícone novo e remova o antigo.']);
           return;
         }
+        if (!android && !iphone) {
+          mostrarPassos(['Se o CHECK-SELT <b>já estiver instalado</b> neste computador, o Chrome não oferece de novo: abra pelo atalho no <b>menu Iniciar</b> ou na <b>área de trabalho</b>.',
+            'Para instalar: clique no ícone de <b>instalar</b> na barra de endereço (o monitor com a seta), à direita.',
+            'Ou clique nos <b>três pontinhos ⋮</b> do Chrome → <b>Transmitir, salvar e compartilhar</b> → <b>Instalar página como app</b>.']);
+          return;
+        }
         mostrarPassos(['Se aparecer <b>Abrir no Chrome</b> no menu, toque nele primeiro.',
           'Toque nos <b>três pontinhos</b> do Chrome, no canto da tela.',
           'Escolha <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>) e confirme.',
