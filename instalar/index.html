@@ -72,7 +72,10 @@
         <button class="btn primario" id="instalar" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 18v2h14v-2"/></svg>Instalar o CHECK-SELT
         </button>
-        <a class="btn primario" id="abrirChrome" href="#" hidden>
+        <button class="btn primario" id="copiarEndereco" type="button" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><span id="textoCopiar">Copiar o endereço checkselt.com</span>
+        </button>
+        <a class="btn secundario" id="abrirChrome" href="#" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="M12 8.5h8.3M9 13.8 4.9 6.6M15 13.8l-4.2 7.2"/></svg>Abrir no Chrome
         </a>
         <a class="btn secundario" id="semInstalar" href="/app/">Usar sem instalar</a>
@@ -125,10 +128,22 @@
         ch.hidden = false;
         document.getElementById('instalar').hidden = true;
         modoChromeAtivo = true;
-        mostrarPassos(['Toque em <b>Abrir no Chrome</b>, logo abaixo.',
-          'No Chrome, toque em <b>Instalar o CHECK-SELT</b>.',
-          'Se o Chrome não abrir: toque nos <b>três pontinhos</b> no canto da tela e escolha <b>Abrir no Chrome</b>.']);
+        document.getElementById('copiarEndereco').hidden = false;
+        mostrarPassos(['Toque em <b>Copiar o endereço</b>, logo abaixo.',
+          'Saia deste app e abra o <b>Chrome</b> pelo ícone dele.',
+          'Toque na barra de endereço, <b>cole</b> e abra. Depois toque em <b>Baixar o aplicativo</b>.',
+          'Se preferir, digite <b>checkselt.com</b> no Chrome. O botão <b>Abrir no Chrome</b> também pode funcionar, conforme o aparelho.']);
       }
+      document.getElementById('copiarEndereco').addEventListener('click', function () {
+        var endereco = 'https://checkselt.com';
+        var texto = document.getElementById('textoCopiar');
+        function feito() { texto.textContent = 'Copiado! Agora abra o Chrome e cole'; }
+        function manual() { texto.textContent = 'No Chrome, digite: checkselt.com'; }
+        try {
+          if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(endereco).then(feito, manual); return; }
+        } catch (e) {}
+        manual();
+      });
       function jaTemONovo() {
         document.getElementById('telaInstalar').hidden = true;
         document.getElementById('telaPronto').hidden = false;
@@ -138,7 +153,7 @@
       window.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault(); pedido = e;
         /* Era o Chrome de verdade, afinal: volta o botão de instalar. */
-        if (modoChromeAtivo) { modoChromeAtivo = false; document.getElementById('abrirChrome').hidden = true; document.getElementById('instalar').hidden = false; passos.hidden = true; }
+        if (modoChromeAtivo) { modoChromeAtivo = false; document.getElementById('abrirChrome').hidden = true; document.getElementById('copiarEndereco').hidden = true; document.getElementById('instalar').hidden = false; passos.hidden = true; }
       });
       window.addEventListener('appinstalled', function () { pedido = null; pronto(); });
 
