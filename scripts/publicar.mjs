@@ -63,7 +63,9 @@ passo('3. Páginas geradas dos modelos');
 console.log(gerar().join(', '));
 
 /* Página inicial mudou desde o último commit? Então atualiza o sitemap e avisa o IndexNow no fim. */
-const inicioMudou = git('status', '--porcelain', '--', 'index.html') !== '';
+/* git diff (e não status): o status acusa o index.html só por fim de linha (CRLF) e fazia avisar o IndexNow à toa. */
+const inicioMudou = git('diff', '--name-only', 'HEAD', '--', 'index.html') !== '';
+const sitemapAntes = readFileSync(join(raiz, 'sitemap.xml'), 'utf8');
 if (inicioMudou) {
   const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
   const sm = readFileSync(join(raiz, 'sitemap.xml'), 'utf8');
@@ -74,7 +76,7 @@ passo('4. Testes');
 const teste = spawnSync(process.execPath, [join(raiz, 'scripts', 'testar.mjs')], { cwd: raiz, stdio: 'inherit' });
 if (teste.status !== 0) { if (!semVersao) desfazerVersao(); parar('testes falharam (versão devolvida para ' + anterior + ')'); }
 
-if (ensaio) { if (!semVersao) desfazerVersao(); console.log('\nENSAIO ok: nada foi publicado; versão devolvida para ' + anterior + '.'); process.exit(0); }
+if (ensaio) { writeFileSync(join(raiz, 'sitemap.xml'), sitemapAntes); if (!semVersao) desfazerVersao(); console.log('\nENSAIO ok: nada foi publicado; versão devolvida para ' + anterior + '.'); process.exit(0); }
 
 passo('5. Commit e envio');
 git('add', '-A');

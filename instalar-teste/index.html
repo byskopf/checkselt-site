@@ -27,7 +27,14 @@
       if (consulta.length > 3006 || consulta.indexOf('#') >= 0) consulta = '';
       window.CHECKSELT_DESTINO = app + consulta;
       var instalado = (window.matchMedia && (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches)) || navigator.standalone === true;
-      if (instalado) { document.documentElement.classList.add('seguindo'); location.replace(window.CHECKSELT_DESTINO); }
+      /* Vindo do ícone ANTIGO, a página roda dentro da janela dele, que também é "standalone": não é o app novo instalado.
+         Sinais: a marca de=pwa-antigo que o app manda, ou a chegada pelo app no Apps Script (referrer). */
+      var doIconeAntigo = /(^|[?&])de=pwa-antigo(&|$)/.test(location.search) ||
+        /^https:\/\/(script\.google\.com|[a-z0-9-]+-script\.googleusercontent\.com)\//.test(document.referrer || '');
+      window.CHECKSELT_DO_ICONE_ANTIGO = doIconeAntigo;
+      window.CHECKSELT_SEM_MARCA = semMarca;
+      window.CHECKSELT_STANDALONE = instalado;
+      if (instalado && !doIconeAntigo) { document.documentElement.classList.add('seguindo'); location.replace(window.CHECKSELT_DESTINO); }
     }());
   </script>
   <style>
@@ -74,7 +81,7 @@
 
     <section id="telaPronto" hidden>
       <h1>Pronto!</h1>
-      <p>Abra o CHECK-SELT pelo <b>ícone novo</b> e remova o ícone antigo.</p>
+      <p id="textoPronto">Abra o CHECK-SELT pelo <b>ícone novo</b> e remova o ícone antigo.</p>
       <div class="botoes">
         <a class="btn primario" id="abrirAgora" href="/app-teste/">Abrir agora</a>
       </div>
@@ -96,7 +103,8 @@
       var android = !iphone && /Android/i.test(ua);
       /* Abre esta mesma página no Chrome do Android (sai da aba dentro de outro app). Sem o Chrome, fica aqui mesmo. */
       function linkChrome() {
-        return 'intent://' + location.host + location.pathname + location.search + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(location.href) + ';end';
+        /* Sem a marca: no Chrome de verdade a página tem de agir normal (lá a instalação funciona). */
+        return 'intent://' + location.host + location.pathname + window.CHECKSELT_SEM_MARCA(location.search) + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(location.href) + ';end';
       }
 
       function mostrarPassos(itens) {
@@ -109,15 +117,47 @@
         document.getElementById('telaPronto').hidden = false;
       }
 
+      /* Android fora do Chrome (janela do ícone antigo, WhatsApp…): instalar não existe ali; o caminho é o Chrome. */
+      var modoChromeAtivo = false;
+      function modoChrome() {
+        var ch = document.getElementById('abrirChrome');
+        ch.href = linkChrome();
+        ch.hidden = false;
+        document.getElementById('instalar').hidden = true;
+        modoChromeAtivo = true;
+        mostrarPassos(['Toque em <b>Abrir no Chrome</b>, logo abaixo.',
+          'No Chrome, toque em <b>Instalar o CHECK-SELT</b>.',
+          'Se o Chrome não abrir: toque nos <b>três pontinhos</b> no canto da tela e escolha <b>Abrir no Chrome</b>.']);
+      }
+      function jaTemONovo() {
+        document.getElementById('telaInstalar').hidden = true;
+        document.getElementById('telaPronto').hidden = false;
+        document.getElementById('textoPronto').innerHTML = 'O <b>CHECK-SELT novo</b> já está instalado neste aparelho. Abra pelo <b>ícone novo</b> e remova o antigo.';
+      }
       if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () {});
-      window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); pedido = e; });
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault(); pedido = e;
+        /* Era o Chrome de verdade, afinal: volta o botão de instalar. */
+        if (modoChromeAtivo) { modoChromeAtivo = false; document.getElementById('abrirChrome').hidden = true; document.getElementById('instalar').hidden = false; passos.hidden = true; }
+      });
       window.addEventListener('appinstalled', function () { pedido = null; pronto(); });
 
       /* O navegador diz que o app do site já está instalado (Chrome no Android): segue direto. */
       if (navigator.getInstalledRelatedApps) {
         navigator.getInstalledRelatedApps().then(function (apps) {
-          if (apps && apps.length) { document.documentElement.classList.add('seguindo'); location.replace(destino); }
+          if (!apps || !apps.length) return;
+          if (window.CHECKSELT_DO_ICONE_ANTIGO) { jaTemONovo(); return; }
+          document.documentElement.classList.add('seguindo'); location.replace(destino);
         }).catch(function () {});
+      }
+
+      if (window.CHECKSELT_DO_ICONE_ANTIGO) {
+        if (android) {
+          if (window.CHECKSELT_STANDALONE) modoChrome();
+          else setTimeout(function () { if (!pedido) modoChrome(); }, 1500);
+        } else if (iphone && window.CHECKSELT_STANDALONE) {
+          mostrarPassos(['Abra o <b>Safari</b> e entre em <b>checkselt.com</b>.', 'Toque em <b>Baixar o aplicativo</b> e siga os passos.', 'Depois abra pelo ícone novo e remova o antigo.']);
+        }
       }
 
       document.getElementById('instalar').addEventListener('click', function () {
@@ -128,16 +168,7 @@
         }
         /* Android sem o pedido de instalação: quase sempre é uma aba dentro de outro app (o ícone antigo do
            CHECK-SELT, o WhatsApp…), onde instalar não existe. O caminho é levar a página para o Chrome. */
-        if (android) {
-          var ch = document.getElementById('abrirChrome');
-          ch.href = linkChrome();
-          ch.hidden = false;
-          document.getElementById('instalar').hidden = true;
-          mostrarPassos(['Toque em <b>Abrir no Chrome</b>, logo abaixo.',
-            'No Chrome, toque de novo em <b>Instalar o CHECK-SELT</b>.',
-            'Se o Chrome não abrir: toque nos <b>três pontinhos</b> no canto da tela e escolha <b>Abrir no Chrome</b>.']);
-          return;
-        }
+        if (android) { modoChrome(); return; }
         if (dentroDeApp) {
           mostrarPassos(['Toque nos <b>três pontinhos</b> (ou em Compartilhar) no canto da tela.',
             'No menu, escolha <b>Abrir no Chrome</b> ou <b>Abrir no navegador externo</b> (no iPhone, <b>Abrir no Safari</b>).',
