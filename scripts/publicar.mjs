@@ -41,6 +41,9 @@ git('fetch', '--quiet', 'origin', 'main');
 if (git('rev-list', '--count', 'HEAD..origin/main') !== '0') parar('o GitHub tem commits que não estão aqui (git pull antes)');
 console.log('ok');
 
+/* git diff (e não status): o status acusa o index.html só por fim de linha (CRLF) e fazia avisar o IndexNow à toa.
+   Medido ANTES de subir a versão, que também mexe no index.html (o ?v= do app-config.js). */
+const inicioMudou = git('diff', '--name-only', 'HEAD', '--', 'index.html') !== '';
 passo('2. Versão');
 const anterior = versaoAtual();
 let nova = anterior;
@@ -63,8 +66,6 @@ passo('3. Páginas geradas dos modelos');
 console.log(gerar().join(', '));
 
 /* Página inicial mudou desde o último commit? Então atualiza o sitemap e avisa o IndexNow no fim. */
-/* git diff (e não status): o status acusa o index.html só por fim de linha (CRLF) e fazia avisar o IndexNow à toa. */
-const inicioMudou = git('diff', '--name-only', 'HEAD', '--', 'index.html') !== '';
 const sitemapAntes = readFileSync(join(raiz, 'sitemap.xml'), 'utf8');
 if (inicioMudou) {
   const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
