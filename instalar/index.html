@@ -88,10 +88,8 @@
 
     <section id="telaPronto" hidden>
       <h1>Pronto!</h1>
-      <p id="textoPronto">Abra o CHECK-SELT pelo <b>ícone novo</b> e remova o ícone antigo.</p>
-      <div class="botoes">
-        <a class="btn primario" id="abrirAgora" href="/app/">Abrir agora</a>
-      </div>
+      <!-- Sem botão "Abrir agora" (pedido do Luciano, 06/10/2026): ele abria o app no navegador, e não pelo ícone novo. -->
+      <p id="textoPronto">Feche esta página e abra o CHECK-SELT pelo <b>ícone novo</b> na tela inicial. Depois remova o ícone antigo.</p>
     </section>
   </main>
 
@@ -99,7 +97,6 @@
     (function () {
       var destino = window.CHECKSELT_DESTINO;
       document.getElementById('semInstalar').href = destino;
-      document.getElementById('abrirAgora').href = destino;
       var passos = document.getElementById('passos');
       var pedido = null;
 
