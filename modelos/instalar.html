@@ -58,9 +58,16 @@
     .passos{margin:4px 0 16px;padding:16px 16px 16px 34px;border:1px solid var(--borda);border-radius:14px;background:var(--superficie);text-align:left;color:var(--suave);line-height:1.7;font-size:.95rem}
     .passos b{color:var(--texto)}
     [hidden]{display:none!important}
+    /* Seta no canto de cima, apontando para o menu ⋮ da aba (que fica acima da página). */
+    .seta-menu{position:fixed;top:6px;right:10px;z-index:5;display:flex;flex-direction:column;align-items:flex-end;gap:2px;color:var(--verde);font-weight:800;font-size:.95rem;pointer-events:none;animation:sobe 1.2s ease-in-out infinite}
+    .seta-menu svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+    .seta-menu span{background:var(--verde);color:#071c2e;padding:6px 10px;border-radius:10px}
+    @keyframes sobe{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+    @media (prefers-reduced-motion:reduce){.seta-menu{animation:none}}
   </style>
 </head>
 <body>
+  <div class="seta-menu" id="setaMenu" hidden aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 20V5m0 0-6 6m6-6 6 6"/></svg><span>Menu ⋮ aqui em cima</span></div>
   <main>
     <svg class="logo" viewBox="0 0 64 80" aria-hidden="true"><rect x="12" y="15" width="40" height="42" rx="5"/><path class="check" d="M21 37l8 8 15-17"/><path d="M32 3v12M32 57v20"/></svg>
 
@@ -72,12 +79,9 @@
         <button class="btn primario" id="instalar" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 18v2h14v-2"/></svg>Instalar o CHECK-SELT
         </button>
-        <button class="btn primario" id="copiarEndereco" type="button" hidden>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><span id="textoCopiar">Copiar o endereço checkselt.com</span>
+        <button class="btn secundario" id="copiarEndereco" type="button" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><span id="textoCopiar">Copiar o endereço</span>
         </button>
-        <a class="btn secundario" id="abrirChrome" href="#" hidden>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="M12 8.5h8.3M9 13.8 4.9 6.6M15 13.8l-4.2 7.2"/></svg>Abrir no Chrome
-        </a>
         <a class="btn secundario" id="semInstalar" href="__APP__">Usar sem instalar</a>
       </div>
     </section>
@@ -104,11 +108,6 @@
       var dentroDeApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)/i.test(ua);
       var safari = iphone && /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS|GSA\//i.test(ua);
       var android = !iphone && /Android/i.test(ua);
-      /* Abre esta mesma página no Chrome do Android (sai da aba dentro de outro app). Sem o Chrome, fica aqui mesmo. */
-      function linkChrome() {
-        /* Sem a marca: no Chrome de verdade a página tem de agir normal (lá a instalação funciona). */
-        return 'intent://' + location.host + location.pathname + window.CHECKSELT_SEM_MARCA(location.search) + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(location.href) + ';end';
-      }
 
       function mostrarPassos(itens) {
         passos.innerHTML = itens.map(function (t) { return '<li>' + t + '</li>'; }).join('');
@@ -123,21 +122,19 @@
       /* Android fora do Chrome (janela do ícone antigo, WhatsApp…): instalar não existe ali; o caminho é o Chrome. */
       var modoChromeAtivo = false;
       function modoChrome() {
-        var ch = document.getElementById('abrirChrome');
-        ch.href = linkChrome();
-        ch.hidden = false;
         document.getElementById('instalar').hidden = true;
         modoChromeAtivo = true;
         document.getElementById('copiarEndereco').hidden = false;
-        mostrarPassos(['Toque em <b>Copiar o endereço</b>, logo abaixo.',
-          'Saia deste app e abra o <b>Chrome</b> pelo ícone dele.',
-          'Toque na barra de endereço, <b>cole</b> e abra. Depois toque em <b>Baixar o aplicativo</b>.',
-          'Se preferir, digite <b>checkselt.com</b> no Chrome. O botão <b>Abrir no Chrome</b> também pode funcionar, conforme o aparelho.']);
+        document.getElementById('setaMenu').hidden = false;
+        mostrarPassos(['Toque nos <b>três pontinhos ⋮</b> no canto de cima da tela (onde a seta aponta).',
+          'Escolha <b>Instalar e criar atalho</b> (ou <b>Instalar app</b>) e confirme.',
+          'Abra pelo <b>ícone novo</b> e apague o antigo.',
+          'Não apareceu? No mesmo menu, escolha <b>Abrir no navegador Chrome</b> e toque em <b>Instalar o CHECK-SELT</b> lá. Ou copie o endereço abaixo e cole no Chrome.']);
       }
       document.getElementById('copiarEndereco').addEventListener('click', function () {
         var endereco = 'https://checkselt.com';
         var texto = document.getElementById('textoCopiar');
-        function feito() { texto.textContent = 'Copiado! Agora abra o Chrome e cole'; }
+        function feito() { texto.textContent = 'Copiado! Cole no Chrome'; }
         function manual() { texto.textContent = 'No Chrome, digite: checkselt.com'; }
         try {
           if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(endereco).then(feito, manual); return; }
@@ -153,7 +150,7 @@
       window.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault(); pedido = e;
         /* Era o Chrome de verdade, afinal: volta o botão de instalar. */
-        if (modoChromeAtivo) { modoChromeAtivo = false; document.getElementById('abrirChrome').hidden = true; document.getElementById('copiarEndereco').hidden = true; document.getElementById('instalar').hidden = false; passos.hidden = true; }
+        if (modoChromeAtivo) { modoChromeAtivo = false; document.getElementById('setaMenu').hidden = true; document.getElementById('copiarEndereco').hidden = true; document.getElementById('instalar').hidden = false; passos.hidden = true; }
       });
       window.addEventListener('appinstalled', function () { pedido = null; pronto(); });
 

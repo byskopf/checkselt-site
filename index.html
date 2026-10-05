@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <style>html.abrindo-app{visibility:hidden}</style>
-  <script src="/app-config.js?v=1.0.12"></script>
+  <script src="/app-config.js?v=1.0.13"></script>
   <script>
     /* Aberto pelo ícone instalado: vai direto para o app. */
     (function () {
@@ -245,10 +245,6 @@
       var dentroDeApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)/i.test(ua);
       var safari = iphone && /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS|GSA\//i.test(ua);
       var android = !iphone && /Android/i.test(ua);
-      /* Abre esta mesma página no Chrome do Android (sai da aba dentro de outro app). Sem o Chrome, fica aqui mesmo. */
-      function linkChrome() {
-        return 'intent://' + location.host + location.pathname + location.search + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(location.href) + ';end';
-      }
 
       var focoAntes = null;
       function mostrar(itens, titulo) {
@@ -308,9 +304,9 @@
           return;
         }
         if (android) {
-          mostrar(['<a class="btn btn-primary" style="margin:4px 0" href="' + linkChrome() + '">Abrir no Chrome</a>',
-            'No Chrome, toque de novo em <b>Baixar o aplicativo</b>.',
-            'Se o Chrome não abrir: toque nos <b>três pontinhos</b> no canto da tela e escolha <b>Abrir no Chrome</b> (ou <b>Instalar app</b>, se aparecer).'], 'Abra no Chrome');
+          mostrar(['Toque nos <b>três pontinhos ⋮</b> no canto de cima da tela.',
+            'Escolha <b>Instalar app</b> (ou <b>Instalar e criar atalho</b>) e confirme.',
+            'Não apareceu? No mesmo menu, escolha <b>Abrir no navegador Chrome</b> (ou <b>Abrir no Chrome</b>) e toque em <b>Baixar o aplicativo</b> lá.']);
           return;
         }
         if (dentroDeApp) {
