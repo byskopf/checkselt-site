@@ -1,10 +1,13 @@
-/* Service worker do site checkselt.com: guarda a página inicial para abrir sem internet e torna o site
-   instalável. O app em si roda no Apps Script, dentro de /app/; essas páginas NÃO vão para o cache (sem
-   internet o app não funciona mesmo, e uma cópia velha montaria um endereço quebrado). */
-importScripts('/app-config.js?v=1.0.15');
+/* Service worker do site checkselt.com: guarda a página inicial e a moldura do app (/app/) e torna o site instalável.
+   O app em si roda no Apps Script (script.google.com), dentro do /app/. Guardar o /app/ serve às redes que bloqueiam o
+   checkselt.com mas liberam o Google (ex.: rede de empresa com filtro que ainda não classificou o domínio): o ícone
+   abre pela cópia e o app carrega direto do Google, como o ícone antigo sempre fez. Sempre rede primeiro; a cópia só
+   entra se a rede falhar ou devolver página de outro endereço (a página de bloqueio do filtro). O /app-teste/ não é
+   guardado. */
+importScripts('/app-config.js?v=1.0.16');
 var VERSAO = (self.CHECKSELT_SITE_CONFIG && self.CHECKSELT_SITE_CONFIG.version) || '0';
 var CACHE = 'checkselt-site-' + VERSAO;
-var BASE = ['/', '/index.html', '/app-config.js?v=' + VERSAO, '/manifest.json', '/offline.html', '/favicon.svg'+'?v=20261006',
+var BASE = ['/', '/index.html', '/app/', '/app-config.js?v=' + VERSAO, '/manifest.json', '/offline.html', '/favicon.svg'+'?v=20261006',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-192.png', '/icon-maskable-512.png', '/apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {
@@ -23,14 +26,22 @@ self.addEventListener('fetch', function (e) {
   var u; try { u = new URL(r.url); } catch (x) { return; }
   if (u.origin !== self.location.origin) return;
   if (r.mode === 'navigate') {
-    var ehApp = /^\/app(-teste)?(\/|$)/.test(u.pathname);
+    var ehTeste = /^\/app-teste(\/|$)/.test(u.pathname);
+    var ehApp = /^\/app(\/|$)/.test(u.pathname);
+    /* A cópia guardada de cada página: o /app/ é um só, qualquer que seja a consulta (?abrir=, ?app=se…). */
+    var chave = ehApp ? '/app/' : r.url;
+    var copia = function () {
+      if (ehTeste) return caches.match('/offline.html');
+      return caches.match(chave, { ignoreSearch: ehApp }).then(function (p) { return p || (ehApp ? null : caches.match('/index.html')); })
+        .then(function (p) { return p || caches.match('/offline.html'); });
+    };
     e.respondWith(fetch(r).then(function (resp) {
-      if (resp && resp.ok && !ehApp) { var c = resp.clone(); caches.open(CACHE).then(function (k) { k.put(r.url, c); }); }
+      /* Filtro de rede que desvia para a página de bloqueio: a resposta chega de outro endereço. Vale a cópia. */
+      var doSite = resp && resp.ok && resp.type !== 'opaqueredirect' && (!resp.url || new URL(resp.url).origin === self.location.origin);
+      if (!doSite) return copia().then(function (p) { return (p && p.url && /offline\.html$/.test(p.url) && resp) ? resp : (p || resp); });
+      if (!ehTeste) { var c = resp.clone(); caches.open(CACHE).then(function (k) { k.put(chave, c); }); }
       return resp;
-    }).catch(function () {
-      if (ehApp) return caches.match('/offline.html');
-      return caches.match(r.url).then(function (p) { return p || caches.match('/index.html'); }).then(function (p) { return p || caches.match('/offline.html'); });
-    }));
+    }).catch(copia));
     return;
   }
   e.respondWith(caches.match(r).then(function (c) { return c || fetch(r); }));
