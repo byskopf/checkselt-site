@@ -4,7 +4,7 @@
    abre pela cópia e o app carrega direto do Google, como o ícone antigo sempre fez. Sempre rede primeiro; a cópia só
    entra se a rede falhar ou devolver página de outro endereço (a página de bloqueio do filtro). O /app-teste/ não é
    guardado. */
-importScripts('/app-config.js?v=1.0.17');
+importScripts('/app-config.js?v=1.0.18');
 var VERSAO = (self.CHECKSELT_SITE_CONFIG && self.CHECKSELT_SITE_CONFIG.version) || '0';
 var CACHE = 'checkselt-site-' + VERSAO;
 var BASE = ['/', '/index.html', '/app/', '/app-config.js?v=' + VERSAO, '/manifest.json', '/offline.html', '/favicon.svg'+'?v=20261006',
@@ -82,10 +82,11 @@ self.addEventListener('push', function (e) {
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
   var url = (e.notification.data && e.notification.data.url) || '/app/';
+  var alvo = new URL(url, self.location.origin).pathname;
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (lista) {
     for (var i = 0; i < lista.length; i++) {
       var c = lista[i];
-      if (new URL(c.url).pathname.indexOf('/app') === 0 && 'navigate' in c) return c.navigate(url).then(function (w) { return (w || c).focus(); });
+      if (new URL(c.url).pathname === alvo && 'navigate' in c) return c.navigate(url).then(function (w) { return (w || c).focus(); });
     }
     return self.clients.openWindow(url);
   }));

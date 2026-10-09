@@ -33,6 +33,12 @@ for (const a of PAGINAS) {
   t('acentos em UTF-8 ' + a, !h.includes('\uFFFD') && !/Ã[£§©¡³ª]/.test(h));
 }
 try { JSON.parse(ler('manifest.json')); t('manifest.json válido', true); } catch (e) { t('manifest.json válido', false, e.message); }
+try {
+  const man = JSON.parse(ler('manifest.json'));
+  const dentro = (u) => typeof u === 'string' && u.startsWith(man.scope);
+  t('manifest: escopo é /app/ e o id continua /', man.scope === '/app/' && man.id === '/', man.scope + ' ' + man.id);
+  t('manifest: start_url e atalhos dentro do escopo', dentro(man.start_url) && (man.shortcuts || []).every(s => dentro(s.url)), man.start_url);
+} catch (e) { t('manifest: escopo', false, e.message); }
 
 /* 2 */
 const v = versaoAtual();

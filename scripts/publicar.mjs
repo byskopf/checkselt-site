@@ -105,7 +105,7 @@ for (let i = 0; i < 40 && !noAr; i++) {
   } catch (e) { process.stdout.write('  (sem resposta: ' + e.message + ')\n'); }
 }
 if (!noAr) parar('passaram 10 minutos e o site ainda não mostra ' + nova + '. Confira em ' + SITE + '/app-config.js');
-for (const p of ['/modelos/app.html', '/testes/app.cjs', '/scripts/publicar.mjs']) {
+for (const p of ['/modelos/app.html', '/testes/app.cjs', '/scripts/publicar.mjs', '/CLAUDE.md']) {
   try { const s = (await fetch(SITE + p + '?_=' + Date.now(), { cache: 'no-store' })).status; if (s !== 404) console.log('  ATENÇÃO: ' + p + ' está público (HTTP ' + s + ')'); } catch {}
 }
 console.log('no ar: ' + nova);
