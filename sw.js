@@ -4,7 +4,7 @@
    abre pela cópia e o app carrega direto do Google, como o ícone antigo sempre fez. Sempre rede primeiro; a cópia só
    entra se a rede falhar ou devolver página de outro endereço (a página de bloqueio do filtro). O /app-teste/ não é
    guardado. */
-importScripts('/app-config.js?v=1.0.16');
+importScripts('/app-config.js?v=1.0.17');
 var VERSAO = (self.CHECKSELT_SITE_CONFIG && self.CHECKSELT_SITE_CONFIG.version) || '0';
 var CACHE = 'checkselt-site-' + VERSAO;
 var BASE = ['/', '/index.html', '/app/', '/app-config.js?v=' + VERSAO, '/manifest.json', '/offline.html', '/favicon.svg'+'?v=20261006',
