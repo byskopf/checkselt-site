@@ -26,7 +26,7 @@ const ABERTURA_CSS = [
   '    @keyframes checkselt-visto{0%{stroke-dashoffset:34;opacity:1}40%{stroke-dashoffset:0;opacity:1}85%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}',
   '    @media (prefers-reduced-motion:reduce){#carregando .visto{animation:none;stroke-dashoffset:0}}',
   ''].join('\n');
-const PLANO = 'Abrindo CHECK-SELT.COM…<br><small id="plano" hidden>Se não abrir, <a id="direto" href="">tente de novo</a>.</small>';
+const PLANO = 'Abrindo checkselt.com…<br><small id="plano" hidden>Se não abrir, <a id="direto" href="">tente de novo</a>.</small>';
 const ABERTURA_ANIMADA = '  <div id="carregando" role="status"><div class="conteudo"><svg viewBox="0 0 48 48" aria-hidden="true" fill="none"><rect x="8" y="8" width="32" height="32" rx="8" stroke="currentColor" stroke-width="3"/><path class="visto" d="M16 25l6 6 11-13" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div>' + PLANO + '</div></div></div>';
 const ABERTURA_SIMPLES = '  <div id="carregando" role="status"><div>' + PLANO + '</div></div>';
 
