@@ -18,7 +18,7 @@ export function versaoAtual() {
 /* Tela "Abrindo o CHECK-SELT…": o visto do logo se desenha, segura e recomeça (só CSS, sem JavaScript; "reduzir movimento"
    deixa o visto pronto). Pedido do Luciano em 13/10/2026, igual à do app. Entra primeiro só no /app-teste/; a produção
    (/app/) passa a usar quando ele disser "publicar": troque ABERTURA_ANIMADA_NA_PRODUCAO para true. */
-export const ABERTURA_ANIMADA_NA_PRODUCAO = false;
+export const ABERTURA_ANIMADA_NA_PRODUCAO = true;
 const ABERTURA_CSS = [
   '    #carregando .conteudo{display:flex;flex-direction:column;align-items:center;gap:14px}',
   '    #carregando svg{width:76px;height:76px;color:#0b2239}',
