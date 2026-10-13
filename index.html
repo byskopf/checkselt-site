@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <style>html.abrindo-app{visibility:hidden}</style>
-  <script src="/app-config.js?v=1.0.21"></script>
+  <script src="/app-config.js?v=1.0.22"></script>
   <script>
     /* Aberto pelo ícone instalado: vai direto para o app. */
     (function () {
@@ -123,10 +123,6 @@
         <svg viewBox="0 0 64 80" aria-hidden="true"><rect x="12" y="15" width="40" height="42" rx="5"/><path class="check" d="M21 37l8 8 15-17"/><path d="M32 3v12M32 57v20"/></svg>
         <span>CHECK-<b>SELT</b></span>
       </a>
-      <button class="menu-btn" id="botaoMenu" type="button" aria-expanded="false" aria-controls="menuSecoes">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu
-      </button>
-      <nav id="menuSecoes" aria-label="Seções"><a href="#quem">Para quem é</a><a href="#ferramentas">Ferramentas</a><a href="#instalar">Como instalar</a><a href="#duvidas">Dúvidas</a><a href="#sobre">Sobre</a></nav>
     </header>
 
     <main>
@@ -154,56 +150,6 @@
         <p class="hint" id="statusCompartilhar" role="status" aria-live="polite"></p>
       </div>
 
-      <section id="quem" aria-labelledby="tQuem">
-        <h2 id="tQuem">Para quem é</h2>
-        <div class="grid entrada">
-          <div class="card"><h3>Sou fiscal ou técnico</h3><p>Acompanhe obras na Transmissão e na Subestação, registre pendências com foto, envie à prestadora, confira a correção e gere relatórios em PDF e Excel. O cadastro é feito no app e liberado pela administração.</p><a class="btn-link" href="/app/">Entrar ou criar conta<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></a></div>
-          <div class="card"><h3>Sou prestadora</h3><p>Entre só com o código do lote, sem cadastro: veja as pendências, informe a correção com fotos e gere a folha de conferência.</p><a class="btn-link" href="/app/?abrir=prestadora">Entrar com o código do lote<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></a></div>
-          <div class="card"><h3>Uso as ferramentas de campo</h3><p>Localizadores e calculadoras para o dia a dia: estrutura, equipamento, subestação, defeito na LT, TC / TP, cesto e antena.</p><a class="btn-link" href="#ferramentas">Ver as ferramentas<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></a></div>
-        </div>
-      </section>
-
-      <section id="ferramentas" aria-labelledby="tFerramentas">
-        <h2 id="tFerramentas">O que você encontra no CHECK-SELT</h2>
-        <div class="grid">
-          <div class="card"><h3>Comissionamento e pendências</h3><p>Na Transmissão e na Subestação, acompanhe obras, pendências, envio à prestadora e conferência da correção, com relatórios em PDF e Excel.</p></div>
-          <div class="card"><h3>Localizador de Pisca</h3><p>Estime a estrutura do pisca pelo LDF indicado no relé.</p></div>
-          <div class="card"><h3>Localizar estrutura</h3><p>Busque uma estrutura pelo número, em qualquer LT energizada, ou a mais próxima pelo GPS, e abra a ficha com dados técnicos e mapa.</p></div>
-          <div class="card"><h3>Gibi / Cesto / Bastão</h3><p>Veja se o gibi, o cesto e o bastão atendem a estrutura.</p></div>
-          <div class="card"><h3>Localizar equipamento</h3><p>Na distribuição, ache o equipamento pelo número, alimentador, subestação ou cidade, ou o mais próximo pelo GPS, com ficha, mapa e elo-fusível.</p></div>
-          <div class="card"><h3>TC / TP</h3><p>Dimensione o TC e o TP do transformador e veja o elo-fusível (elo só até 300 kVA).</p></div>
-          <div class="card"><h3>Localizar subestação</h3><p>Encontre a subestação pelo nome ou sigla, com dados e rota.</p></div>
-          <div class="card"><h3>Antena Direção</h3><p>Ache a antena de celular mais próxima, para onde apontar e o ganho recomendado.</p></div>
-        </div>
-      </section>
-
-      <section id="instalar" aria-labelledby="tInstalar">
-        <h2 id="tInstalar">Como instalar</h2>
-        <div class="steps">
-          <div class="card"><h3>Toque em “Baixar o aplicativo”</h3><p>Abra este site no Chrome (Android e computador) ou no Safari (iPhone), não dentro do WhatsApp.</p></div>
-          <div class="card"><h3>Confirme a instalação</h3><p>No Android, toque em Instalar; no computador, clique em Instalar. No iPhone (Safari): ••• → Compartilhar → Adicionar à Tela de Início.</p></div>
-          <div class="card"><h3>Abra pelo ícone</h3><p>O CHECK-SELT abre em tela cheia, direto do ícone na tela inicial.</p></div>
-        </div>
-      </section>
-
-      <section id="duvidas" aria-labelledby="tDuvidas">
-        <h2 id="tDuvidas">Dúvidas</h2>
-        <div class="faq">
-          <details><summary>Preciso de cadastro?</summary><p>Fiscais e técnicos fazem o cadastro no próprio aplicativo, e o acesso é liberado pela administração. A prestadora não precisa de cadastro: entra com o código do lote que recebeu.</p></details>
-          <details><summary>Funciona sem internet?</summary><p>O CHECK-SELT precisa de internet para abrir. Se o sinal cair no meio do trabalho, o que você registrou fica em “Aguardando sinal” no aparelho e sobe sozinho quando a conexão voltar, desde que o app esteja aberto (o da Subestação sobe ao abrir a Subestação).</p></details>
-          <details><summary>Quanto custa?</summary><p>Nada. É grátis para quem usa.</p></details>
-          <details><summary>Não aparece a opção de instalar. E agora?</summary><p>Abra checkselt.com direto no Chrome (Android ou computador) ou no Safari (iPhone), e não dentro do WhatsApp. No Chrome, também dá para instalar pelo menu ⋮ → Instalar app.</p></details>
-          <details><summary>Já tinha o app instalado. Preciso trocar?</summary><p>Recomendamos instalar o ícone por este site. Antes, abra o app que você já usava, com internet, e espere o aviso “Aguardando sinal” sumir. Só depois apague o ícone antigo. Na primeira vez pelo checkselt.com, entre de novo com o mesmo usuário e senha, de preferência com sinal bom.</p></details>
-        </div>
-      </section>
-      <section id="sobre" class="sobre" aria-labelledby="tSobre">
-        <h2 id="tSobre">Sobre o CHECK-SELT</h2>
-        <div class="grid">
-          <div class="card"><h3>Quem mantém</h3><p>A equipe CHECK-SELT, que desenvolve e cuida do aplicativo. Dúvidas, sugestões ou problemas: <a href="mailto:check.selt@checkselt.com">check.selt@checkselt.com</a>.</p></div>
-          <div class="card"><h3>Atualizações</h3><p>O aplicativo recebe melhorias com frequência. Quem instalou recebe as atualizações sozinho, sem precisar baixar de novo.</p></div>
-          <div class="card"><h3>Dados e permissões</h3><p>O app só pede a localização para achar o que está perto de você (equipamento mais próximo, o ponto “Você” nos mapas e a Antena Direção), a câmera para fotografar pendências e correções e a bússola na Antena Direção. A localização serve só para essa consulta e não é gravada, e as fotos são enviadas sem a localização. Você pode negar: as ferramentas também funcionam pelo número, nome ou sigla digitados. Os registros ficam em planilhas e pastas do Google Drive da administração do CHECK-SELT, e o acesso de fiscais e técnicos é liberado pela administração.</p></div>
-        </div>
-      </section>
     </main>
 
     <footer>
@@ -224,14 +170,6 @@
     (function () {
       var cfg = window.CHECKSELT_SITE_CONFIG || {};
 
-      /* Menu do celular: abre e fecha pelo botão; fecha ao escolher uma seção, ao tocar fora ou com Esc. */
-      var botaoMenu = document.getElementById('botaoMenu');
-      var menu = document.getElementById('menuSecoes');
-      function menuAberto(sim) { menu.classList.toggle('aberto', sim); botaoMenu.setAttribute('aria-expanded', sim ? 'true' : 'false'); }
-      botaoMenu.addEventListener('click', function (e) { e.stopPropagation(); menuAberto(!menu.classList.contains('aberto')); });
-      menu.addEventListener('click', function (e) { if (e.target.closest('a')) menuAberto(false); });
-      document.addEventListener('click', function (e) { if (menu.classList.contains('aberto') && !menu.contains(e.target)) menuAberto(false); });
-      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && menu.classList.contains('aberto')) { menuAberto(false); botaoMenu.focus(); } });
       var botao = document.getElementById('botaoInstalar');
       var texto = document.getElementById('textoInstalar');
       var dica = document.getElementById('dicaInstalar');
