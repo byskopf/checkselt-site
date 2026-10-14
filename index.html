@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <style>html.abrindo-app{visibility:hidden}</style>
-  <script src="/app-config.js?v=1.0.26"></script>
+  <script src="/app-config.js?v=1.0.27"></script>
   <script>
     /* Aberto pelo ícone instalado: vai direto para o app. */
     (function () {
@@ -120,6 +120,16 @@
     .topo-arte path{vector-effect:non-scaling-stroke}
     .topo-in{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px}
     .topo .logo{border-left:4px solid var(--green);padding-left:12px;font-size:1.7rem;line-height:1.1;text-shadow:0 0 6px #0b2239,0 0 12px #0b2239}
+    /* Uma tela só, sem rolagem: o conteúdo centraliza entre o cabeçalho e o rodapé e só cresce se a tela for pequena demais. */
+    body{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+    .wrap{flex:1;display:flex;flex-direction:column;width:min(100% - 32px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px),1040px)}
+    main{flex:1;display:flex;align-items:center;justify-content:center}
+    .wrap.topo-in{flex:none;flex-direction:row;align-items:center;justify-content:flex-start}
+    .hero{padding:16px 0}
+    footer{margin-top:0;padding:12px 0 calc(14px + env(safe-area-inset-bottom,0px));font-size:.8rem}
+    @media(max-width:520px){.topo{padding-top:max(14px,env(safe-area-inset-top,0px));padding-bottom:14px}.topo .logo{font-size:1.5rem}
+      .hero{padding:8px 0}h1{margin:12px 0 8px;font-size:clamp(2.2rem,11vw,2.9rem)}.lead{font-size:1rem;line-height:1.5}.actions{margin-top:20px;gap:10px}.compartilhar{margin-top:12px}.hint{margin-top:10px}}
+    @media(max-height:700px){.hero{padding:0}.badge{padding:4px 10px}h1{margin:8px 0 6px}.lead{font-size:.95rem;line-height:1.45}.actions{margin-top:14px;gap:8px}.btn{min-height:46px;padding:9px 18px}.compartilhar{margin-top:8px}.btn-link{min-height:38px}.hint{margin-top:8px;font-size:.8rem}}
   </style>
 </head>
 <body>
@@ -159,7 +169,7 @@
     </main>
 
     <footer>
-      <span>© 2026 CHECK-SELT · Subestações, linhas de transmissão e distribuição</span>
+      <span>© 2026 CHECK-SELT</span>
       <span id="contato">Contato: <a href="mailto:check.selt@checkselt.com">check.selt@checkselt.com</a></span>
     </footer>
   </div>

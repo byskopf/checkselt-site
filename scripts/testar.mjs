@@ -88,6 +88,11 @@ async function medirNoChrome() {
       const sw = await avaliar('document.documentElement.scrollWidth');
       t(`página inicial sem rolar para o lado em ${w}px`, sw <= w, 'largura ' + sw);
     }
+    for (const [w, h] of [[360, 640], [360, 700], [390, 700], [412, 720], [1280, 720]]) {
+      await abrir('index.html', w, h);
+      const alt = await avaliar('document.documentElement.scrollHeight');
+      t(`página inicial cabe numa tela só (sem rolar) em ${w}x${h}`, alt <= h, 'altura ' + alt);
+    }
     ws.close();
   } catch (e) { t('medição no Chrome', false, e.message); }
   finally { p.kill(); await espera(300); try { rmSync(perfil, { recursive: true, force: true }); } catch {} }
