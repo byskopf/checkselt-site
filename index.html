@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <style>html.abrindo-app{visibility:hidden}</style>
-  <script src="/app-config.js?v=1.0.24"></script>
+  <script src="/app-config.js?v=1.0.25"></script>
   <script>
     /* Aberto pelo ícone instalado: vai direto para o app. */
     (function () {
@@ -114,16 +114,26 @@
       header nav a{margin:0;padding:14px 12px;border-radius:10px;font-size:1rem;color:var(--text)}
       header nav a:hover,header nav a:focus-visible{background:rgba(255,255,255,.06)}}
     @media(max-width:520px){.grid{grid-template-columns:1fr}.btn{width:100%;justify-content:center}.hero{padding-top:32px}}
+    /* Cabeçalho no estilo do app: faixa azul-marinho, barra verde antes do título, desenho de torres e subestação ao fundo, à direita. */
+    .topo{display:block;position:relative;overflow:hidden;padding:max(20px,env(safe-area-inset-top,0px)) 0 20px;background:linear-gradient(135deg,#0b2239 0,#123754 100%);border-bottom:3px solid var(--green);border-radius:0 0 18px 18px;box-shadow:0 10px 26px rgba(0,0,0,.35)}
+    .topo-arte{position:absolute;top:0;right:0;bottom:0;width:auto;height:100%;max-width:min(320px,70%);pointer-events:none;fill:none;stroke:#8aa4bd;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:.6;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 70%);mask-image:linear-gradient(90deg,transparent 0,#000 70%)}
+    .topo-arte path{vector-effect:non-scaling-stroke}
+    .topo-in{position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .topo .logo{border-left:4px solid var(--green);padding-left:12px;font-size:1.7rem;line-height:1.1;text-shadow:0 0 6px #0b2239,0 0 12px #0b2239}
+    .topo-marca{width:30px;height:38px;flex:none}
+    .topo-marca rect,.topo-marca path{fill:none;stroke:var(--text);stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+    .topo-marca .check{stroke:var(--green)}
   </style>
 </head>
 <body>
+  <header class="topo">
+    <svg class="topo-arte" aria-hidden="true" focusable="false" viewBox="0 0 320 100" preserveAspectRatio="xMaxYMax meet"><path d="M98 27Q40 40 0 58M94 49Q36 62 0 80M146 27Q160 44 182 55M150 49Q166 66 182 55M210 55Q226 58 250 66"/><path d="M119 14L122 6L125 14M119 14L106 98M125 14L138 98M119 14H125M119 14L128.1 34M125 14L115.9 34M115.9 34H128.1M115.9 34L131.8 58M128.1 34L112.2 58M112.2 58H131.8M112.2 58L135.2 80M131.8 58L108.8 80M108.8 80H135.2M108.8 80L138 98M135.2 80L106 98M106 98H138M98 22H146M98 22L116.2 32M146 22L127.8 32M98 22v5M146 22v5M94 44H150M94 44L112.8 54M150 44L131.2 54M94 44v5M150 44v5"/><path d="M194 48L196 40L198 48M194 48L186 98M198 48L206 98M194 48H198M194 48L200.2 62M198 48L191.8 62M191.8 62H200.2M191.8 62L203.1 80M200.2 62L188.9 80M188.9 80H203.1M188.9 80L206 98M203.1 80L186 98M186 98H206M182 50H210M182 50L192.1 60M210 50L199.9 60M182 50v5M210 50v5"/><path d="M230 98V62M276 98V62M228 62H278M236 62v5M250 62v5M264 62v5M250 67V78M238 98V84H262V98M243 84v-6M250 84v-6M257 84v-6M263 87h5v8h-5M284 98V72H316V98M284 72L300 66L316 72M289 77h5v5h-5zM299 77h5v5h-5zM309 77h4v5h-4zM297 98V89H305V98M218 98H320"/></svg>
+    <div class="wrap topo-in">
+      <a class="logo" href="./" aria-label="CHECK-SELT, início"><span>CHECK-<b>SELT</b></span></a>
+      <svg class="topo-marca" viewBox="0 0 64 80" aria-hidden="true"><rect x="12" y="15" width="40" height="42" rx="5"/><path class="check" d="M21 37l8 8 15-17"/><path d="M32 3v12M32 57v20"/></svg>
+    </div>
+  </header>
   <div class="wrap">
-    <header>
-      <a class="logo" href="./" aria-label="CHECK-SELT, início">
-        <svg viewBox="0 0 64 80" aria-hidden="true"><rect x="12" y="15" width="40" height="42" rx="5"/><path class="check" d="M21 37l8 8 15-17"/><path d="M32 3v12M32 57v20"/></svg>
-        <span>CHECK-<b>SELT</b></span>
-      </a>
-    </header>
 
     <main>
       <div class="hero">
