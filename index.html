@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <style>html.abrindo-app{visibility:hidden}</style>
-  <script src="/app-config.js?v=1.0.27"></script>
+  <script src="/app-config.js?v=1.0.28"></script>
   <script>
     /* Aberto pelo ícone instalado: vai direto para o app. */
     (function () {
@@ -72,7 +72,7 @@
     .actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:30px}
     .btn{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:12px 22px;border-radius:14px;font-weight:800;text-decoration:none;font-size:1rem;font-family:inherit;border:0;cursor:pointer}
     .compartilhar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:18px}
-    .btn-link{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:9px 14px;border:1px solid rgba(92,224,168,.28);border-radius:12px;background:none;color:#bdf3d9;font:inherit;font-size:.9rem;font-weight:700;text-decoration:none;cursor:pointer}
+    .btn-link{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:9px 14px;border:1px solid rgba(184,199,213,.22);border-radius:12px;background:none;color:var(--muted);font:inherit;font-size:.9rem;font-weight:700;text-decoration:none;cursor:pointer}
     .btn-link svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
     .aviso{position:fixed;inset:0;z-index:20;display:grid;place-items:end center;padding:16px;background:rgba(3,10,20,.6)}
     .aviso[hidden]{display:none}
@@ -85,7 +85,7 @@
     .btn-primary:hover{background:var(--green-strong)}
     .btn-secondary{border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text)}
     .btn-secondary:hover{background:rgba(255,255,255,.1)}
-    .hint{margin-top:14px;color:var(--muted);font-size:.86rem}
+    .hint{max-width:440px;margin:14px auto 0;color:var(--muted);font-size:.86rem;line-height:1.5}
     section{padding:34px 0}
     h2{font-size:1.4rem;margin:0 0 18px}
     .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
@@ -126,7 +126,9 @@
     main{flex:1;display:flex;align-items:center;justify-content:center}
     .wrap.topo-in{flex:none;flex-direction:row;align-items:center;justify-content:flex-start}
     .hero{padding:16px 0}
-    footer{margin-top:0;padding:12px 0 calc(14px + env(safe-area-inset-bottom,0px));font-size:.8rem}
+    footer{margin-top:0;padding:12px 0 calc(14px + env(safe-area-inset-bottom,0px));font-size:.78rem;opacity:.85;justify-content:center;text-align:center}
+    .btn:focus-visible,.btn-link:focus-visible{outline:3px solid var(--green);outline-offset:3px}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
     @media(max-width:520px){.topo{padding-top:max(14px,env(safe-area-inset-top,0px));padding-bottom:14px}.topo .logo{font-size:1.5rem}
       .hero{padding:8px 0}h1{margin:12px 0 8px;font-size:clamp(2.2rem,11vw,2.9rem)}.lead{font-size:1rem;line-height:1.5}.actions{margin-top:20px;gap:10px}.compartilhar{margin-top:12px}.hint{margin-top:10px}}
     @media(max-height:700px){.hero{padding:0}.badge{padding:4px 10px}h1{margin:8px 0 6px}.lead{font-size:.95rem;line-height:1.45}.actions{margin-top:14px;gap:8px}.btn{min-height:46px;padding:9px 18px}.compartilhar{margin-top:8px}.btn-link{min-height:38px}.hint{margin-top:8px;font-size:.8rem}}
@@ -148,13 +150,13 @@
         <p class="lead">Ferramentas de campo, comissionamento e gestão de pendências para subestações, linhas de transmissão e distribuição, num só aplicativo.</p>
         <div class="actions">
           <button class="btn btn-primary" id="botaoInstalar" type="button">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 18v2h14v-2"/></svg><span id="textoInstalar">Baixar o aplicativo</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 18v2h14v-2"/></svg><span id="textoInstalar">Instalar aplicativo</span>
           </button>
           <a class="btn btn-secondary" id="botaoNavegador" href="/app/">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h8a3 3 0 0 1 3 3v11H5zM12 12h8m-3-3 3 3-3 3"/></svg>Usar no navegador
           </a>
         </div>
-        <p class="hint" id="dicaInstalar" aria-live="polite">Grátis. Funciona no Android, no iPhone e no computador. Já instalou? Abra pelo ícone.</p>
+        <p class="hint" id="dicaInstalar" aria-live="polite">Grátis. Para Android, iPhone e computador, conforme o navegador e o aparelho; o passo a passo da instalação varia. Já instalou? Abra pelo ícone.</p>
         <div class="compartilhar">
           <button class="btn-link" id="botaoCompartilhar" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>Compartilhar
@@ -260,18 +262,18 @@
         if (android) {
           mostrar(['Toque nos <b>três pontinhos ⋮</b> no canto de cima da tela.',
             'Escolha <b>Instalar app</b> (ou <b>Instalar e criar atalho</b>) e confirme.',
-            'Não apareceu? No mesmo menu, escolha <b>Abrir no navegador Chrome</b> (ou <b>Abrir no Chrome</b>) e toque em <b>Baixar o aplicativo</b> lá.']);
+            'Não apareceu? No mesmo menu, escolha <b>Abrir no navegador Chrome</b> (ou <b>Abrir no Chrome</b>) e toque em <b>Instalar aplicativo</b> lá.']);
           return;
         }
         if (dentroDeApp) {
           mostrar(['Toque nos <b>três pontinhos</b> (ou em Compartilhar) no canto da tela.',
             'No menu que abrir, escolha <b>Abrir no Chrome</b> ou <b>Abrir no navegador externo</b> (no iPhone, <b>Abrir no Safari</b>). Não use os botões desta página.',
-            'No navegador, toque de novo em <b>Baixar o aplicativo</b>.'], 'Abra no navegador');
+            'No navegador, toque de novo em <b>Instalar aplicativo</b>.'], 'Abra no navegador');
           return;
         }
         if (iphone && !safari) {
           mostrar(['No iPhone, instale pelo <b>Safari</b>.',
-            'Abra <b>checkselt.com</b> no Safari e toque em <b>Baixar o aplicativo</b>.'], 'Use o Safari');
+            'Abra <b>checkselt.com</b> no Safari e toque em <b>Instalar aplicativo</b>.'], 'Use o Safari');
           return;
         }
         if (iphone) {
