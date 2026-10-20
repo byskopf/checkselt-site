@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.checkselt.app",
+      "sha256_cert_fingerprints": [
+        "D3:FB:AC:AF:47:73:F5:C7:22:85:A6:14:D5:1C:F4:BF:2E:77:5C:7A:46:8D:AE:9A:5B:DE:4B:6D:A2:BF:AA:1D"
+      ]
+    }
+  }
+]

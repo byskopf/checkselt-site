@@ -6,3 +6,7 @@ exclude:
   - icones-fonte
   - README.md
   - CLAUDE.md
+
+# Pasta que o Jekyll ignora por comecar com ponto: o Android confere o app (APK) por aqui.
+include:
+  - .well-known
