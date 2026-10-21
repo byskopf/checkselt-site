@@ -9,6 +9,7 @@
 <style>
 /* PÁGINA DE PROVA (21/10/2026, pedido dele: "vamos fazer um teste"): o mapa VETORIAL do OpenFreeMap (grátis, sem chave, dados do OpenStreetMap) com o MapLibre, para comparar com o mapa do app
    — nitidez, o nome das ruas que não fica de cabeça para baixo ao girar, fluidez e bateria com o carro andando. NÃO faz parte do app: sem login, sem dado nenhum, sem gravar nada.
+   VERSÃO 5: diagnóstico mais fino (engasgos = quadros de mais de 24 ms nos últimos 10 s, pior quadro, tranco = variação de VELOCIDADE entre quadros) e o botão "Textos", para separar o peso dos rótulos do mapa.
    VERSÃO 4: a velocidade também sai do deslocamento entre as posições (o GPS do celular às vezes manda a velocidade sem o rumo e o carro avançava em surtos); e três números de diagnóstico (GPS a cada, posições sem rumo, tranco do carro).
    VERSÃO 3: o carro tremia com o GPS real (rumo e posição crus a cada fix); agora velocidade e rumo são filtrados (ver o bloco do movimento). VERSÃO 2 (21/10/2026, depois do 1º teste no carro: "o carro parece ir quadro por quadro, uma travadeira"): na versão 1 o carro pulava a cada posição do GPS (~1 s) e só a câmera deslizava. Agora o carro e a câmera andam JUNTOS,
    quadro a quadro: a posição desenhada desliza para a posição prevista (a última do GPS + velocidade × tempo), e a câmera, o giro e o zoom saem dela a cada quadro. Estilo padrão sem prédios em 3D (Bright) e resolução limitada a 2x. */
@@ -37,26 +38,27 @@ input[type=range]{flex:1;min-width:120px;height:44px}
 <body>
 <div id="mapa"></div>
 <div class="barra" id="barra">
-  <div class="card aviso"><b>Teste de mapa vetorial, versão 4</b> (não é o app). Gire o mapa com dois dedos ou pelo controle abaixo e veja se o <b>nome das ruas fica de pé</b>. Dirigindo, toque em <b>Seguir</b>.</div>
+  <div class="card aviso"><b>Teste de mapa vetorial, versão 5</b> (não é o app). Gire o mapa com dois dedos ou pelo controle abaixo e veja se o <b>nome das ruas fica de pé</b>. Dirigindo, toque em <b>Seguir</b>.</div>
   <div class="card linha">
     <select id="estilo" aria-label="Estilo do mapa">
       <option value="bright">Bright</option><option value="positron">Positron (claro)</option><option value="liberty">Liberty (prédios 3D)</option><option value="dark">Escuro</option><option value="fiord">Fiord</option>
     </select>
     <button id="seguir" class="verde" type="button">Seguir meu GPS</button>
     <button id="norte" type="button">Norte</button>
+    <button id="textos" type="button">Textos: ligados</button>
   </div>
   <div class="card linha"><span style="font-weight:600">Girar</span><input id="giro" type="range" min="0" max="359" value="0" aria-label="Girar o mapa"><span id="giroTxt" style="min-width:44px;text-align:right">0°</span></div>
 </div>
 <div class="rod"><div class="stats">
   <div><span>quadros/s</span><b id="fps">–</b></div>
-  <div><span>quadros lentos</span><b id="lentos">0</b></div>
-  <div><span>zoom</span><b id="zoom">–</b></div>
+  <div><span>engasgos (10 s)</span><b id="engasgos">0</b></div>
+  <div><span>pior quadro (10 s)</span><b id="pior">–</b></div>
   <div><span>velocidade</span><b id="vel">–</b></div>
-  <div><span>pedidos do mapa</span><b id="pedidos">0</b></div>
+  <div><span>zoom</span><b id="zoom">–</b></div>
   <div><span>bateria (queda)</span><b id="bat">–</b></div>
   <div><span>GPS a cada</span><b id="gps">–</b></div>
-  <div><span>posições sem rumo</span><b id="semrumo">–</b></div>
-  <div><span>tranco do carro</span><b id="tranco">–</b></div>
+  <div><span>tranco (10 s)</span><b id="tranco">–</b></div>
+  <div><span>pedidos do mapa</span><b id="pedidos">0</b></div>
 </div></div>
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
@@ -69,6 +71,12 @@ mapa.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
 const caminhonete = '<svg class="carro" viewBox="0 0 36 64" aria-hidden="true"><path d="M12.5 4H23.5Q26.2 4.3 26.8 7.5L27.3 16V57Q27.3 60 24.5 60H11.5Q8.7 60 8.7 57V16L9.2 7.5Q9.8 4.3 12.5 4Z" fill="#f4f4f1" stroke="#3a4a44" stroke-width="0.9"/><path d="M13.6 5.2H22.4L22 19.6H14Z" fill="#2e7d5b"/><path d="M10.6 21.5H25.4L24 27H12Z" fill="#26343d"/><rect x="10.2" y="43.6" width="15.6" height="14.6" rx="1.2" fill="#2a2f33"/><path d="M14.6 21V62M21.4 21V62" stroke="#ee7b33" stroke-width="1.7" stroke-linecap="round"/><path d="M8.6 29H27.4M8.6 44H27.4" stroke="#4a4f52" stroke-width="1.4" stroke-linecap="round"/></svg>';
 const el = document.createElement('div'); el.innerHTML = caminhonete;
 const marca = new maplibregl.Marker({ element: el, rotationAlignment: 'map', pitchAlignment: 'map' }).setLngLat([-52.4083, -28.2625]).addTo(mapa);
+
+/* TEXTOS LIGADOS/DESLIGADOS (para achar a causa do "picando"): o mapa vetorial recalcula a posição de todos os rótulos a cada ladrilho novo; sem textos esse trabalho some. Se o carro ficar liso sem textos, o culpado são os rótulos. */
+let textosLigados = true;
+function aplicaTextos() { const st = mapa.getStyle(); if (!st) return; st.layers.forEach(l => { if (l.type === 'symbol') { try { mapa.setLayoutProperty(l.id, 'visibility', textosLigados ? 'visible' : 'none'); } catch (e) { /* camada ainda não pronta */ } } }); }
+$('textos').addEventListener('click', () => { textosLigados = !textosLigados; $('textos').textContent = 'Textos: ' + (textosLigados ? 'ligados' : 'desligados'); aplicaTextos(); });
+mapa.on('styledata', () => { if (!textosLigados) aplicaTextos(); });
 
 /* estilo e giro manual */
 $('estilo').addEventListener('change', e => mapa.setStyle(BASE + e.target.value));
@@ -83,7 +91,7 @@ mapa.on('zoom', () => { $('zoom').textContent = mapa.getZoom().toFixed(2); });
 const RAD = Math.PI / 180;
 let seguindo = false, vigia = null, pausadoAte = 0;
 let fix = null, histGps = [], pos = null, hSuave = 0, temRumo = false, vx = 0, vy = 0, zSuave = null;
-let ultPos = null, ultPasso = null, trancoJanela = 0;
+let ultPos = null, ultPasso = null; const trancos = [];
 const diag = { ultChegada: 0, ints: [], total: 0, semRumo: 0, porPosicao: 0 };
 const MS_POR_GRAU_LAT = 110574;
 function normaliza(g) { return ((g % 360) + 540) % 360 - 180; }
@@ -117,7 +125,6 @@ function aoPosicao(p) {
   diag.ultChegada = agora; diag.total++; if (hGps === null) diag.semRumo++; if (fonte === 'posições') diag.porPosicao++;
   const ints = diag.ints, media = ints.length ? ints.reduce((x, y) => x + y, 0) / ints.length : 0;
   $('gps').textContent = ints.length ? (media / 1000).toFixed(1) + ' s (máx ' + (Math.max(...ints) / 1000).toFixed(1) + ')' : '–';
-  $('semrumo').textContent = Math.round(100 * diag.semRumo / diag.total) + '%';
 }
 function quadroDoCarro(agora, dt) {
   if (!fix || !pos) return;
@@ -140,7 +147,7 @@ function quadroDoCarro(agora, dt) {
   }
   marca.setLngLat([pos.lng, pos.lat]);
   marca.setRotation(hSuave);
-  if (ultPos) { const passoM = metros(ultPos.lat, ultPos.lng, pos.lat, pos.lng); if (ultPasso !== null) { trancoJanela = Math.max(trancoJanela, Math.abs(passoM - ultPasso)); } ultPasso = passoM; }
+  if (ultPos && dt > 0) { const vQuadro = metros(ultPos.lat, ultPos.lng, pos.lat, pos.lng) / dt; if (ultPasso !== null) trancos.push({ t: agora, v: Math.abs(vQuadro - ultPasso) * 3.6 }); ultPasso = vQuadro; }
   ultPos = { lat: pos.lat, lng: pos.lng };
   if (!seguindo || Date.now() < pausadoAte) { zSuave = null; return; }
   if (zSuave === null) zSuave = mapa.getZoom();
@@ -164,10 +171,19 @@ window.__prova = { aoPosicao, pos: () => pos, mapa, marca };   // só para confe
 
 /* medidas: quadros por segundo, quadros lentos (> 50 ms), pedidos de ladrilho e queda da bateria */
 let ult = performance.now(), quadros = 0, lentos = 0, desde = ult;
+const quadrosRec = [];   // { t, dt } dos últimos 10 s
 function laco(t) {
   const dt = t - ult; ult = t; quadros++; if (dt > 50) lentos++;
+  quadrosRec.push({ t, dt });
   quadroDoCarro(t, Math.min(dt, 100) / 1000);
-  if (t - desde >= 1000) { $('tranco').textContent = Math.round(trancoJanela * 100) + ' cm'; trancoJanela = 0; $('fps').textContent = Math.round(quadros * 1000 / (t - desde)); $('lentos').textContent = lentos; quadros = 0; desde = t; }
+  if (t - desde >= 1000) {
+    while (quadrosRec.length && t - quadrosRec[0].t > 10000) quadrosRec.shift();
+    while (trancos.length && t - trancos[0].t > 10000) trancos.shift();
+    $('fps').textContent = Math.round(quadros * 1000 / (t - desde)); quadros = 0; desde = t;
+    $('engasgos').textContent = quadrosRec.filter(q => q.dt > 24).length;
+    $('pior').textContent = Math.round(Math.max(0, ...quadrosRec.map(q => q.dt))) + ' ms';
+    $('tranco').textContent = Math.round(Math.max(0, ...trancos.map(q => q.v))) + ' km/h';
+  }
   requestAnimationFrame(laco);
 }
 requestAnimationFrame(laco);
