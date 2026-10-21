@@ -9,7 +9,7 @@
 <style>
 /* PÁGINA DE PROVA (21/10/2026, pedido dele: "vamos fazer um teste"): o mapa VETORIAL do OpenFreeMap (grátis, sem chave, dados do OpenStreetMap) com o MapLibre, para comparar com o mapa do app
    — nitidez, o nome das ruas que não fica de cabeça para baixo ao girar, fluidez e bateria com o carro andando. NÃO faz parte do app: sem login, sem dado nenhum, sem gravar nada.
-   VERSÃO 2 (21/10/2026, depois do 1º teste no carro: "o carro parece ir quadro por quadro, uma travadeira"): na versão 1 o carro pulava a cada posição do GPS (~1 s) e só a câmera deslizava. Agora o carro e a câmera andam JUNTOS,
+   VERSÃO 3: o carro tremia com o GPS real (rumo e posição crus a cada fix); agora velocidade e rumo são filtrados (ver o bloco do movimento). VERSÃO 2 (21/10/2026, depois do 1º teste no carro: "o carro parece ir quadro por quadro, uma travadeira"): na versão 1 o carro pulava a cada posição do GPS (~1 s) e só a câmera deslizava. Agora o carro e a câmera andam JUNTOS,
    quadro a quadro: a posição desenhada desliza para a posição prevista (a última do GPS + velocidade × tempo), e a câmera, o giro e o zoom saem dela a cada quadro. Estilo padrão sem prédios em 3D (Bright) e resolução limitada a 2x. */
 :root{--navy:#0f2a3d;--green:#1f8a5b;--surface:#fff;--line:#d5dde5;--muted:#5b6b7a}
 *{box-sizing:border-box}
@@ -36,7 +36,7 @@ input[type=range]{flex:1;min-width:120px;height:44px}
 <body>
 <div id="mapa"></div>
 <div class="barra" id="barra">
-  <div class="card aviso"><b>Teste de mapa vetorial, versão 2</b> (não é o app). Gire o mapa com dois dedos ou pelo controle abaixo e veja se o <b>nome das ruas fica de pé</b>. Dirigindo, toque em <b>Seguir</b>.</div>
+  <div class="card aviso"><b>Teste de mapa vetorial, versão 3</b> (não é o app). Gire o mapa com dois dedos ou pelo controle abaixo e veja se o <b>nome das ruas fica de pé</b>. Dirigindo, toque em <b>Seguir</b>.</div>
   <div class="card linha">
     <select id="estilo" aria-label="Estilo do mapa">
       <option value="bright">Bright</option><option value="positron">Positron (claro)</option><option value="liberty">Liberty (prédios 3D)</option><option value="dark">Escuro</option><option value="fiord">Fiord</option>
@@ -73,37 +73,52 @@ $('norte').addEventListener('click', () => { if (!seguindo) mapa.easeTo({ bearin
 mapa.on('rotate', () => { const b = Math.round(((mapa.getBearing() % 360) + 360) % 360); $('giro').value = b; $('giroTxt').textContent = b + '°'; });
 mapa.on('zoom', () => { $('zoom').textContent = mapa.getZoom().toFixed(2); });
 
-/* O MOVIMENTO (versão 2): uma posição "desenhada" que desliza, a cada quadro, para a posição PREVISTA (a última do GPS + a velocidade × o tempo desde ela, até 2,5 s), com constante de tempo de 250 ms;
-   o carro, a câmera, o giro (constante de 500 ms, pelo caminho mais curto) e o zoom (0,3 nível por segundo) saem dela no mesmo quadro — nada pula quando chega uma posição nova. */
+/* O MOVIMENTO (versão 3, depois do 2º teste no carro: "o carro aparece tremendo"): o GPS de verdade tem ruído (a posição oscila alguns metros e o rumo alguns graus de um segundo para o outro), e a versão 2 o aplicava cru a cada posição nova.
+   Agora: (1) a VELOCIDADE do carro é filtrada (constante de 0,8 s) e a posição desenhada anda com ela quadro a quadro, só sendo puxada de leve (constante de 1,2 s) para onde o GPS diz que ela está; (2) o RUMO tem folga de 3° (só mexe se o GPS discordar
+   de verdade, como no app) e desliza (0,5 s); (3) o carro e o giro do mapa usam o MESMO rumo filtrado — o carro fica parado na tela, de frente para cima; (4) parado ou devagar, a oscilação do GPS dentro da precisão não mexe em nada. */
 const RAD = Math.PI / 180;
 let seguindo = false, vigia = null, pausadoAte = 0;
-let fix = null, pos = null, bSuave = null, zSuave = null, ultQuadro = performance.now();
+let fix = null, pos = null, hSuave = 0, temRumo = false, vx = 0, vy = 0, zSuave = null, semGiroManual = true;
 const MS_POR_GRAU_LAT = 110574;
 function normaliza(g) { return ((g % 360) + 540) % 360 - 180; }
 mapa.on('movestart', e => { if (e.originalEvent) pausadoAte = Date.now() + 8000; });
+function metros(lat1, lng1, lat2, lng2) { return Math.hypot((lng2 - lng1) * 111320 * Math.cos(lat1 * RAD), (lat2 - lat1) * MS_POR_GRAU_LAT); }
 function aoPosicao(p) {
   const c = p.coords, v = isFinite(c.speed) && c.speed !== null ? c.speed : 0, kmh = v * 3.6;
   const h = isFinite(c.heading) && c.heading !== null && v > 1 ? c.heading : null;
+  const precisao = isFinite(c.accuracy) && c.accuracy !== null ? c.accuracy : 0;
   $('vel').textContent = Math.round(kmh) + ' km/h';
-  fix = { lng: c.longitude, lat: c.latitude, t: performance.now(), v, h, kmh };
-  if (!pos) pos = { lng: c.longitude, lat: c.latitude };
+  let lng = c.longitude, lat = c.latitude;
+  if (fix && h === null && metros(fix.lat, fix.lng, lat, lng) < Math.max(4, precisao * 0.6)) { lng = fix.lng; lat = fix.lat; }   // parado ou a pé: a oscilação do GPS não mexe no carro
+  fix = { lng, lat, t: performance.now(), v, h, kmh };
+  if (!pos) pos = { lng, lat };
 }
 function quadroDoCarro(agora, dt) {
   if (!fix || !pos) return;
-  const espera = Math.min(2.5, (agora - fix.t) / 1000), andar = fix.h !== null ? fix.v * espera : 0;
-  const alvoLat = fix.lat + (andar * Math.cos((fix.h || 0) * RAD)) / MS_POR_GRAU_LAT;
-  const alvoLng = fix.lng + (andar * Math.sin((fix.h || 0) * RAD)) / (111320 * Math.cos(fix.lat * RAD));
-  const k = 1 - Math.exp(-dt / 0.25);
-  pos.lng += (alvoLng - pos.lng) * k; pos.lat += (alvoLat - pos.lat) * k;
+  /* a velocidade filtrada (leste/norte, m/s) */
+  const aVx = fix.h !== null ? fix.v * Math.sin(fix.h * RAD) : 0, aVy = fix.h !== null ? fix.v * Math.cos(fix.h * RAD) : 0;
+  const kv = 1 - Math.exp(-dt / 0.8);
+  vx += (aVx - vx) * kv; vy += (aVy - vy) * kv;
+  /* onde o GPS diz que o carro está agora (a última posição + a velocidade × o tempo desde ela) */
+  const espera = Math.min(2.5, (agora - fix.t) / 1000);
+  const gLat = fix.lat + (aVy * espera) / MS_POR_GRAU_LAT, gLng = fix.lng + (aVx * espera) / (111320 * Math.cos(fix.lat * RAD));
+  if (metros(pos.lat, pos.lng, gLat, gLng) > 60) { pos.lat = gLat; pos.lng = gLng; }   // longe demais (primeira posição, túnel): vai direto
+  const kc = 1 - Math.exp(-dt / 1.2);
+  pos.lat += (vy * dt) / MS_POR_GRAU_LAT + (gLat - pos.lat) * kc;
+  pos.lng += (vx * dt) / (111320 * Math.cos(pos.lat * RAD)) + (gLng - pos.lng) * kc;
+  /* o rumo filtrado: folga de 3° e desliza em 0,5 s, pelo caminho mais curto */
+  if (fix.h !== null) {
+    if (!temRumo) { hSuave = fix.h; temRumo = true; }
+    else { const d = normaliza(fix.h - hSuave); if (Math.abs(d) > 3) hSuave += d * (1 - Math.exp(-dt / 0.5)); }
+  }
   marca.setLngLat([pos.lng, pos.lat]);
-  if (fix.h !== null) marca.setRotation(fix.h);
-  if (!seguindo || Date.now() < pausadoAte) { bSuave = null; return; }
-  if (bSuave === null) { bSuave = mapa.getBearing(); zSuave = mapa.getZoom(); }
-  if (fix.h !== null) bSuave += normaliza(fix.h - bSuave) * (1 - Math.exp(-dt / 0.5));
+  marca.setRotation(hSuave);
+  if (!seguindo || Date.now() < pausadoAte) { zSuave = null; return; }
+  if (zSuave === null) zSuave = mapa.getZoom();
   const zAlvo = 18 - (18 - 16.25) * Math.min(1, Math.max(0, (fix.kmh - 20) / 60));
   const passo = 0.3 * dt, d = zAlvo - zSuave;
   zSuave += Math.abs(d) <= passo ? d : Math.sign(d) * passo;
-  mapa.jumpTo({ center: [pos.lng, pos.lat], bearing: bSuave, zoom: zSuave });
+  mapa.jumpTo({ center: [pos.lng, pos.lat], bearing: temRumo ? hSuave : mapa.getBearing(), zoom: zSuave });
 }
 $('seguir').addEventListener('click', () => {
   if (seguindo) {
@@ -112,7 +127,7 @@ $('seguir').addEventListener('click', () => {
     if (vigia !== null) navigator.geolocation.clearWatch(vigia); vigia = null; return;
   }
   if (!navigator.geolocation) { alert('Este aparelho não tem GPS no navegador.'); return; }
-  seguindo = true; bSuave = null; $('seguir').textContent = 'Parar'; $('seguir').className = 'on';
+  seguindo = true; $('seguir').textContent = 'Parar'; $('seguir').className = 'on';
   mapa.setPadding({ top: Math.round(innerHeight * 0.45), bottom: 0, left: 0, right: 0 });   // o carro fica no terço de baixo, com a rua à frente à mostra
   vigia = navigator.geolocation.watchPosition(aoPosicao, e => { alert('GPS: ' + e.message); }, { enableHighAccuracy: true, maximumAge: 0 });
 });
