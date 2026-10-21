@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Teste de mapa vetorial</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<style>
+/* PÁGINA DE PROVA (21/10/2026, pedido dele: "vamos fazer um teste"): o mapa VETORIAL do OpenFreeMap (grátis, sem chave, dados do OpenStreetMap) com o MapLibre, para comparar com o mapa do app
+   — nitidez, o nome das ruas que não fica de cabeça para baixo ao girar, fluidez e bateria com o carro andando. NÃO faz parte do app: sem login, sem dado nenhum, sem gravar nada. */
+:root{--navy:#0f2a3d;--green:#1f8a5b;--surface:#fff;--line:#d5dde5;--muted:#5b6b7a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:Inter,system-ui,Arial,sans-serif;color:var(--navy);background:#eef2f6}
+#mapa{position:fixed;inset:0}
+.barra{position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:5;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.card{pointer-events:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;box-shadow:0 2px 10px #0f2a3d22}
+.aviso{font-size:13px;line-height:1.35;color:var(--muted)}
+.aviso b{color:var(--navy)}
+.linha{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select,button{font:600 15px Inter,system-ui,Arial,sans-serif;min-height:44px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--navy);padding:0 14px}
+button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+button.verde{background:var(--green);color:#fff;border-color:var(--green)}
+input[type=range]{flex:1;min-width:120px;height:44px}
+.rod{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);z-index:5;pointer-events:none}
+.stats{pointer-events:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:13px}
+.stats div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 8px}
+.stats b{display:block;font-size:16px}
+.stats span{color:var(--muted)}
+.carro{width:30px;height:54px}
+.maplibregl-ctrl-bottom-left,.maplibregl-ctrl-bottom-right{bottom:0}
+</style>
+</head>
+<body>
+<div id="mapa"></div>
+<div class="barra">
+  <div class="card aviso"><b>Teste de mapa vetorial</b> (não é o app). Gire o mapa com dois dedos ou pelo controle abaixo e veja se o <b>nome das ruas fica de pé</b>. Dirigindo, toque em <b>Seguir</b>.</div>
+  <div class="card linha">
+    <select id="estilo" aria-label="Estilo do mapa">
+      <option value="liberty">Liberty</option><option value="bright">Bright</option><option value="positron">Positron (claro)</option><option value="dark">Escuro</option><option value="fiord">Fiord</option>
+    </select>
+    <button id="seguir" class="verde" type="button">Seguir meu GPS</button>
+    <button id="norte" type="button">Norte</button>
+  </div>
+  <div class="card linha"><span style="font-weight:600">Girar</span><input id="giro" type="range" min="0" max="359" value="0" aria-label="Girar o mapa"><span id="giroTxt" style="min-width:44px;text-align:right">0°</span></div>
+</div>
+<div class="rod"><div class="stats">
+  <div><span>quadros/s</span><b id="fps">–</b></div>
+  <div><span>quadros lentos</span><b id="lentos">0</b></div>
+  <div><span>zoom</span><b id="zoom">–</b></div>
+  <div><span>velocidade</span><b id="vel">–</b></div>
+  <div><span>pedidos do mapa</span><b id="pedidos">0</b></div>
+  <div><span>bateria (queda)</span><b id="bat">–</b></div>
+</div></div>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+const BASE = 'https://tiles.openfreemap.org/styles/';
+const $ = id => document.getElementById(id);
+const mapa = new maplibregl.Map({ container: 'mapa', style: BASE + 'liberty', center: [-52.4083, -28.2625], zoom: 16, bearing: 0, pitch: 0, maxPitch: 0, attributionControl: { compact: true } });
+mapa.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+
+/* a caminhonete do app (a mesma figura), de cima, apontando para a frente */
+const caminhonete = '<svg class="carro" viewBox="0 0 36 64" aria-hidden="true"><path d="M12.5 4H23.5Q26.2 4.3 26.8 7.5L27.3 16V57Q27.3 60 24.5 60H11.5Q8.7 60 8.7 57V16L9.2 7.5Q9.8 4.3 12.5 4Z" fill="#f4f4f1" stroke="#3a4a44" stroke-width="0.9"/><path d="M13.6 5.2H22.4L22 19.6H14Z" fill="#2e7d5b"/><path d="M10.6 21.5H25.4L24 27H12Z" fill="#26343d"/><rect x="10.2" y="43.6" width="15.6" height="14.6" rx="1.2" fill="#2a2f33"/><path d="M14.6 21V62M21.4 21V62" stroke="#ee7b33" stroke-width="1.7" stroke-linecap="round"/><path d="M8.6 29H27.4M8.6 44H27.4" stroke="#4a4f52" stroke-width="1.4" stroke-linecap="round"/></svg>';
+const el = document.createElement('div'); el.innerHTML = caminhonete;
+const marca = new maplibregl.Marker({ element: el, rotationAlignment: 'map', pitchAlignment: 'map' }).setLngLat([-52.4083, -28.2625]).addTo(mapa);
+
+/* estilo e giro manual */
+$('estilo').addEventListener('change', e => mapa.setStyle(BASE + e.target.value));
+$('giro').addEventListener('input', e => { if (!seguindo) mapa.jumpTo({ bearing: Number(e.target.value) }); });
+$('norte').addEventListener('click', () => { mapa.easeTo({ bearing: 0, duration: 300 }); });
+mapa.on('rotate', () => { const b = Math.round(((mapa.getBearing() % 360) + 360) % 360); $('giro').value = b; $('giroTxt').textContent = b + '°'; });
+mapa.on('zoom', () => { $('zoom').textContent = mapa.getZoom().toFixed(2); });
+
+/* seguir o GPS: o mapa acompanha o carro, gira para a frente ficar para cima e abre o zoom com a velocidade (como a navegação do app); mexer na mão pausa por 8 s */
+let seguindo = false, vigia = null, pausadoAte = 0;
+mapa.on('movestart', e => { if (e.originalEvent) pausadoAte = Date.now() + 8000; });
+function aoPosicao(p) {
+  const c = p.coords, v = isFinite(c.speed) && c.speed !== null ? c.speed : 0, kmh = v * 3.6;
+  $('vel').textContent = Math.round(kmh) + ' km/h';
+  marca.setLngLat([c.longitude, c.latitude]);
+  if (isFinite(c.heading) && c.heading !== null && v > 1) marca.setRotation(c.heading);
+  if (!seguindo || Date.now() < pausadoAte) return;
+  const zoom = 18 - (18 - 16.25) * Math.min(1, Math.max(0, (kmh - 20) / 60));
+  const o = { center: [c.longitude, c.latitude], zoom, duration: 900, easing: t => t, essential: true, offset: [0, Math.round(innerHeight * 0.2)] };
+  if (isFinite(c.heading) && c.heading !== null && v > 1) o.bearing = c.heading;
+  mapa.easeTo(o);
+}
+$('seguir').addEventListener('click', () => {
+  if (seguindo) { seguindo = false; $('seguir').textContent = 'Seguir meu GPS'; $('seguir').className = 'verde'; if (vigia !== null) navigator.geolocation.clearWatch(vigia); vigia = null; return; }
+  if (!navigator.geolocation) { alert('Este aparelho não tem GPS no navegador.'); return; }
+  seguindo = true; $('seguir').textContent = 'Parar'; $('seguir').className = 'on';
+  vigia = navigator.geolocation.watchPosition(aoPosicao, e => { alert('GPS: ' + e.message); }, { enableHighAccuracy: true, maximumAge: 0 });
+});
+
+/* medidas: quadros por segundo, quadros lentos (> 50 ms), pedidos de ladrilho e queda da bateria */
+let ult = performance.now(), quadros = 0, lentos = 0, desde = ult;
+function laco(t) {
+  const dt = t - ult; ult = t; quadros++; if (dt > 50) lentos++;
+  if (t - desde >= 1000) { $('fps').textContent = Math.round(quadros * 1000 / (t - desde)); $('lentos').textContent = lentos; quadros = 0; desde = t; }
+  requestAnimationFrame(laco);
+}
+requestAnimationFrame(laco);
+try { let n = 0; new PerformanceObserver(l => { n += l.getEntries().filter(x => /openfreemap\.org/.test(x.name)).length; $('pedidos').textContent = n; }).observe({ type: 'resource', buffered: true }); } catch (e) { /* sem suporte */ }
+try { navigator.getBattery().then(b => { const i = b.level; const mostra = () => { $('bat').textContent = Math.round((i - b.level) * 100) + ' pp'; }; b.addEventListener('levelchange', mostra); mostra(); }); } catch (e) { /* sem suporte */ }
+</script>
+</body>
+</html>
