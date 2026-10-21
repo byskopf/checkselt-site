@@ -9,6 +9,7 @@
 <style>
 /* PÁGINA DE PROVA (21/10/2026, pedido dele: "vamos fazer um teste"): o mapa VETORIAL do OpenFreeMap (grátis, sem chave, dados do OpenStreetMap) com o MapLibre, para comparar com o mapa do app
    — nitidez, o nome das ruas que não fica de cabeça para baixo ao girar, fluidez e bateria com o carro andando. NÃO faz parte do app: sem login, sem dado nenhum, sem gravar nada.
+   VERSÃO 4: a velocidade também sai do deslocamento entre as posições (o GPS do celular às vezes manda a velocidade sem o rumo e o carro avançava em surtos); e três números de diagnóstico (GPS a cada, posições sem rumo, tranco do carro).
    VERSÃO 3: o carro tremia com o GPS real (rumo e posição crus a cada fix); agora velocidade e rumo são filtrados (ver o bloco do movimento). VERSÃO 2 (21/10/2026, depois do 1º teste no carro: "o carro parece ir quadro por quadro, uma travadeira"): na versão 1 o carro pulava a cada posição do GPS (~1 s) e só a câmera deslizava. Agora o carro e a câmera andam JUNTOS,
    quadro a quadro: a posição desenhada desliza para a posição prevista (a última do GPS + velocidade × tempo), e a câmera, o giro e o zoom saem dela a cada quadro. Estilo padrão sem prédios em 3D (Bright) e resolução limitada a 2x. */
 :root{--navy:#0f2a3d;--green:#1f8a5b;--surface:#fff;--line:#d5dde5;--muted:#5b6b7a}
@@ -25,9 +26,9 @@ button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
 button.verde{background:var(--green);color:#fff;border-color:var(--green)}
 input[type=range]{flex:1;min-width:120px;height:44px}
 .rod{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);z-index:5;pointer-events:none}
-.stats{pointer-events:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:13px}
+.stats{pointer-events:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:5px;font-size:12px}
 .stats div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 8px}
-.stats b{display:block;font-size:16px}
+.stats b{display:block;font-size:15px}
 .stats span{color:var(--muted)}
 .carro{width:30px;height:54px}
 .maplibregl-ctrl-bottom-left,.maplibregl-ctrl-bottom-right{bottom:0}
@@ -36,7 +37,7 @@ input[type=range]{flex:1;min-width:120px;height:44px}
 <body>
 <div id="mapa"></div>
 <div class="barra" id="barra">
-  <div class="card aviso"><b>Teste de mapa vetorial, versão 3</b> (não é o app). Gire o mapa com dois dedos ou pelo controle abaixo e veja se o <b>nome das ruas fica de pé</b>. Dirigindo, toque em <b>Seguir</b>.</div>
+  <div class="card aviso"><b>Teste de mapa vetorial, versão 4</b> (não é o app). Gire o mapa com dois dedos ou pelo controle abaixo e veja se o <b>nome das ruas fica de pé</b>. Dirigindo, toque em <b>Seguir</b>.</div>
   <div class="card linha">
     <select id="estilo" aria-label="Estilo do mapa">
       <option value="bright">Bright</option><option value="positron">Positron (claro)</option><option value="liberty">Liberty (prédios 3D)</option><option value="dark">Escuro</option><option value="fiord">Fiord</option>
@@ -53,6 +54,9 @@ input[type=range]{flex:1;min-width:120px;height:44px}
   <div><span>velocidade</span><b id="vel">–</b></div>
   <div><span>pedidos do mapa</span><b id="pedidos">0</b></div>
   <div><span>bateria (queda)</span><b id="bat">–</b></div>
+  <div><span>GPS a cada</span><b id="gps">–</b></div>
+  <div><span>posições sem rumo</span><b id="semrumo">–</b></div>
+  <div><span>tranco do carro</span><b id="tranco">–</b></div>
 </div></div>
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
@@ -78,25 +82,47 @@ mapa.on('zoom', () => { $('zoom').textContent = mapa.getZoom().toFixed(2); });
    de verdade, como no app) e desliza (0,5 s); (3) o carro e o giro do mapa usam o MESMO rumo filtrado — o carro fica parado na tela, de frente para cima; (4) parado ou devagar, a oscilação do GPS dentro da precisão não mexe em nada. */
 const RAD = Math.PI / 180;
 let seguindo = false, vigia = null, pausadoAte = 0;
-let fix = null, pos = null, hSuave = 0, temRumo = false, vx = 0, vy = 0, zSuave = null, semGiroManual = true;
+let fix = null, histGps = [], pos = null, hSuave = 0, temRumo = false, vx = 0, vy = 0, zSuave = null;
+let ultPos = null, ultPasso = null, trancoJanela = 0;
+const diag = { ultChegada: 0, ints: [], total: 0, semRumo: 0, porPosicao: 0 };
 const MS_POR_GRAU_LAT = 110574;
 function normaliza(g) { return ((g % 360) + 540) % 360 - 180; }
 mapa.on('movestart', e => { if (e.originalEvent) pausadoAte = Date.now() + 8000; });
 function metros(lat1, lng1, lat2, lng2) { return Math.hypot((lng2 - lng1) * 111320 * Math.cos(lat1 * RAD), (lat2 - lat1) * MS_POR_GRAU_LAT); }
 function aoPosicao(p) {
-  const c = p.coords, v = isFinite(c.speed) && c.speed !== null ? c.speed : 0, kmh = v * 3.6;
-  const h = isFinite(c.heading) && c.heading !== null && v > 1 ? c.heading : null;
+  const c = p.coords, agora = performance.now(), tGps = p.timestamp || Date.now();
+  const vGps = isFinite(c.speed) && c.speed !== null ? c.speed : null;
+  const hGps = isFinite(c.heading) && c.heading !== null ? c.heading : null;
   const precisao = isFinite(c.accuracy) && c.accuracy !== null ? c.accuracy : 0;
-  $('vel').textContent = Math.round(kmh) + ' km/h';
+  /* o vetor de velocidade (leste/norte, m/s): do GPS (velocidade + rumo) quando os dois vêm; senão do deslocamento entre as duas últimas posições (o Chrome do celular às vezes manda a velocidade sem o rumo, e sem a velocidade o carro avançava aos surtos de 1 por segundo) */
+  let aVx = 0, aVy = 0, fonte = 'parado';
+  if (vGps !== null && hGps !== null && vGps > 1) { aVx = vGps * Math.sin(hGps * RAD); aVy = vGps * Math.cos(hGps * RAD); fonte = 'gps'; }
+  else if (histGps.length) {
+    /* sem o rumo do GPS: a DIREÇÃO sai do deslocamento nos últimos ~4 s (base longa: o ruído de ±3 m pesa pouco) e a intensidade, da velocidade do GPS quando vem, senão do mesmo deslocamento */
+    const o = histGps[0], dtB = (tGps - o.tGps) / 1000;
+    if (dtB > 1) {
+      const mx = (c.longitude - o.lng) * 111320 * Math.cos(c.latitude * RAD), my = (c.latitude - o.lat) * MS_POR_GRAU_LAT, dist = Math.hypot(mx, my);
+      if (dist / dtB > 1.5) { const mag = vGps !== null && vGps > 1 ? vGps : dist / dtB; aVx = mag * mx / dist; aVy = mag * my / dist; fonte = 'posições'; }
+    }
+  }
+  const kmh = Math.hypot(aVx, aVy) * 3.6;
+  $('vel').textContent = Math.round(vGps !== null && vGps > 1 ? vGps * 3.6 : kmh) + ' km/h';
   let lng = c.longitude, lat = c.latitude;
-  if (fix && h === null && metros(fix.lat, fix.lng, lat, lng) < Math.max(4, precisao * 0.6)) { lng = fix.lng; lat = fix.lat; }   // parado ou a pé: a oscilação do GPS não mexe no carro
-  fix = { lng, lat, t: performance.now(), v, h, kmh };
+  if (fix && fonte === 'parado' && metros(fix.lat, fix.lng, lat, lng) < Math.max(4, precisao * 0.6)) { lng = fix.lng; lat = fix.lat; }   // parado ou a pé: a oscilação do GPS não mexe no carro
+  histGps.push({ lng: c.longitude, lat: c.latitude, tGps }); while (histGps.length > 1 && tGps - histGps[0].tGps > 4500) histGps.shift();
+  fix = { lng, lat, t: agora, vx: aVx, vy: aVy, kmh };
   if (!pos) pos = { lng, lat };
+  /* o diagnóstico: intervalo entre as posições, quantas vieram sem rumo e de onde saiu a velocidade */
+  if (diag.ultChegada) { const d = agora - diag.ultChegada; diag.ints.push(d); if (diag.ints.length > 30) diag.ints.shift(); }
+  diag.ultChegada = agora; diag.total++; if (hGps === null) diag.semRumo++; if (fonte === 'posições') diag.porPosicao++;
+  const ints = diag.ints, media = ints.length ? ints.reduce((x, y) => x + y, 0) / ints.length : 0;
+  $('gps').textContent = ints.length ? (media / 1000).toFixed(1) + ' s (máx ' + (Math.max(...ints) / 1000).toFixed(1) + ')' : '–';
+  $('semrumo').textContent = Math.round(100 * diag.semRumo / diag.total) + '%';
 }
 function quadroDoCarro(agora, dt) {
   if (!fix || !pos) return;
   /* a velocidade filtrada (leste/norte, m/s) */
-  const aVx = fix.h !== null ? fix.v * Math.sin(fix.h * RAD) : 0, aVy = fix.h !== null ? fix.v * Math.cos(fix.h * RAD) : 0;
+  const aVx = fix.vx, aVy = fix.vy;
   const kv = 1 - Math.exp(-dt / 0.8);
   vx += (aVx - vx) * kv; vy += (aVy - vy) * kv;
   /* onde o GPS diz que o carro está agora (a última posição + a velocidade × o tempo desde ela) */
@@ -107,12 +133,15 @@ function quadroDoCarro(agora, dt) {
   pos.lat += (vy * dt) / MS_POR_GRAU_LAT + (gLat - pos.lat) * kc;
   pos.lng += (vx * dt) / (111320 * Math.cos(pos.lat * RAD)) + (gLng - pos.lng) * kc;
   /* o rumo filtrado: folga de 3° e desliza em 0,5 s, pelo caminho mais curto */
-  if (fix.h !== null) {
-    if (!temRumo) { hSuave = fix.h; temRumo = true; }
-    else { const d = normaliza(fix.h - hSuave); if (Math.abs(d) > 3) hSuave += d * (1 - Math.exp(-dt / 0.5)); }
+  if (Math.hypot(aVx, aVy) > 1.5) {
+    const hAlvo = (Math.atan2(aVx, aVy) / RAD + 360) % 360;
+    if (!temRumo) { hSuave = hAlvo; temRumo = true; }
+    else { const d = normaliza(hAlvo - hSuave); if (Math.abs(d) > 3) hSuave += d * (1 - Math.exp(-dt / 0.5)); }
   }
   marca.setLngLat([pos.lng, pos.lat]);
   marca.setRotation(hSuave);
+  if (ultPos) { const passoM = metros(ultPos.lat, ultPos.lng, pos.lat, pos.lng); if (ultPasso !== null) { trancoJanela = Math.max(trancoJanela, Math.abs(passoM - ultPasso)); } ultPasso = passoM; }
+  ultPos = { lat: pos.lat, lng: pos.lng };
   if (!seguindo || Date.now() < pausadoAte) { zSuave = null; return; }
   if (zSuave === null) zSuave = mapa.getZoom();
   const zAlvo = 18 - (18 - 16.25) * Math.min(1, Math.max(0, (fix.kmh - 20) / 60));
@@ -138,7 +167,7 @@ let ult = performance.now(), quadros = 0, lentos = 0, desde = ult;
 function laco(t) {
   const dt = t - ult; ult = t; quadros++; if (dt > 50) lentos++;
   quadroDoCarro(t, Math.min(dt, 100) / 1000);
-  if (t - desde >= 1000) { $('fps').textContent = Math.round(quadros * 1000 / (t - desde)); $('lentos').textContent = lentos; quadros = 0; desde = t; }
+  if (t - desde >= 1000) { $('tranco').textContent = Math.round(trancoJanela * 100) + ' cm'; trancoJanela = 0; $('fps').textContent = Math.round(quadros * 1000 / (t - desde)); $('lentos').textContent = lentos; quadros = 0; desde = t; }
   requestAnimationFrame(laco);
 }
 requestAnimationFrame(laco);
